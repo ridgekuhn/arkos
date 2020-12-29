@@ -16,6 +16,16 @@ if [ ! -f "/home/ark/.config/.update${RIDGEK_DATE}" ]; then
 		sudo apt update && sudo apt install rclone -y || (printf "\nCould not install required dependencies\n" | tee -a "$LOG_FILE" && exit 1)
 	fi
 
+	# Install pip
+	if ! pip3 --version &> /dev/null; then
+		sudo apt update && sudo apt install python3-pip -y || (printf "\nCould not install required dependencies\n" | tee -a "$LOG_FILE" && exit 1)
+	fi
+
+	# Install python modules
+	if ! pip3 list | grep pyudev &> /dev/null; then
+		pip3 install pyudev
+	fi
+
 	# Install update payload
 	sudo wget ${RIDGEK_URL}/arkosupdate${RIDGEK_DATE}.zip -O /home/ark/arkosupdate${RIDGEK_DATE}.zip -a "$LOG_FILE"
 	if [ -f "/home/ark/arkosupdate${RIDGEK_DATE}.zip" ]; then
@@ -27,6 +37,8 @@ if [ ! -f "/home/ark/.config/.update${RIDGEK_DATE}" ]; then
 		ln -s /roms/backup/rclone/rclone.conf /home/ark/.config/rclone/rclone.conf
 
 		# Grant executable permissions to new scripts
+		sudo chmod -v a+x "/opt/joy2key/RetroPie-Setup/scriptmodules/helpers.sh" | tee -a "$LOG_FILE"
+		sudo chmod -v a+x "/opt/joy2key/RetroPie-Setup/scriptmodules/supplementary/runcommand/joy2key.py" | tee -a "$LOG_FILE"
 		sudo chmod -v a+x "/opt/system/Sync Savefiles to Cloud.sh" | tee -a "$LOG_FILE"
 		sudo chmod -v a+x "/opt/system/Advanced/Backup Settings to Cloud.sh" | tee -a "$LOG_FILE"
 	else
