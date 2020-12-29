@@ -1,5 +1,5 @@
 #!/bin/bash
-# Example whiptail dialog for ArkOS using RetroPie joy2key.py loader
+# Example joypad input listener using RetroPie joy2key.py loader
 # by ridgek
 ###########
 # PREFLIGHT
