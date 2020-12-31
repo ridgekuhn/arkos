@@ -11,10 +11,10 @@ if [ -f "${RETROPIE_HELPERS}" ]; then
 
 	# Required by joy2keyStart
 	scriptdir="/opt/joy2key/RetroPie-Setup"
-	# Arguments to pass to joy2keyStart (left, right, up, down, return, space, esc)
-	keyconfig=(kcub1 kcuf1 kcuu1 kcud1 0x0a 0x20 0x1b)
+	# Arguments to pass to joy2keyStart (left, right, up, down, return, esc)
+	KEY_MAPPINGS=(kcub1 kcuf1 kcuu1 kcud1 0x0d 0x1b)
 
-	joy2keyStart ${keyconfig[@]}
+	joy2keyStart ${KEY_MAPPINGS[@]}
 else
 	echo "joy2key.py not found"
 	exit 1
