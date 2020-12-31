@@ -1,0 +1,3 @@
+[Path]
+PathChanged=/home/ark/.config/retroarch/states
+Unit=arkloned@retroarch-states\x40-home-ark-.config-retroarch-states.service

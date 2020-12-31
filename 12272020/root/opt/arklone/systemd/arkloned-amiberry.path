@@ -1,0 +1,3 @@
+[Path]
+PathChanged=/opt/amiberry/savestates
+Unit=arkloned@amiberry-savestates\x40-opt-amiberry-savestates.service

@@ -1,0 +1,3 @@
+[Path]
+PathChanged=/home/ark/.config/retroarch/saves
+Unit=arkloned@retroarch-saves\x40-home-ark-.config-retroarch-saves.service

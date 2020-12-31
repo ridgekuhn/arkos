@@ -1,0 +1,12 @@
+[Unit]
+Description=Arklone - rclone sync for ArkOS
+
+[Service]
+Type=oneshot
+User=ark
+Group=ark
+StandardOutput=journal+console
+ExecStart=/bin/bash -c "/opt/arklone/arklone.sh %I"
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,3 @@
+[Path]
+PathChanged=/roms
+Unit=arkloned@retroarch-roms\x40-roms.service
