@@ -42,7 +42,7 @@ if [ ! -f "/home/ark/.config/.update${RIDGEK_DATE}" ]; then
 		sudo chmod -v a+x "/opt/arklone/arklone-arkos.sh"
 		# Set up EmulationStation scripts
 		sudo chmod -v a+x "/opt/arklone/Cloud Settings.sh"
-		sudo ln -s "/opt/arklone/Cloud Settings.sh" "/opt/system/Cloud Settings.sh"
+		sudo ln -s "/opt/arklone/emulationstation/Cloud Settings.sh" "/opt/system/Cloud Settings.sh"
 		# rclone.conf is stored on EASYROMS partition, link to ~/.config/rclone so rclone can find it
 		ln -s /roms/backup/rclone.conf /home/ark/.config/rclone/rclone.conf
 		sudo chmod 666 /roms/back/rclone/rclone.conf
