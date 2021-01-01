@@ -6,7 +6,7 @@ Type=oneshot
 User=ark
 Group=ark
 StandardOutput=journal+console
-ExecStart=/bin/bash -c "/opt/arklone/arklone.sh %I"
+ExecStart=/bin/bash -c "/opt/arklone/arklone-saves.sh %I"
 
 [Install]
 WantedBy=multi-user.target

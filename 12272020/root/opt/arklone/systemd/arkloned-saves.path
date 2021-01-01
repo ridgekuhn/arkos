@@ -1,3 +1,8 @@
 [Path]
 PathChanged=/home/ark/.config/retroarch/saves
-Unit=arkloned@retroarch-saves\x40-home-ark-.config-retroarch-saves.service
+Unit=arkloned@-home-ark-.config-retroarch-saves\x40retroarch-saves.service
+
+[Install]
+WantedBy=multi-user.target
+Wants=network-online.target
+After=network-online.target

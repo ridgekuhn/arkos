@@ -9,24 +9,21 @@ This module contains three parts:
 * A systemd service for monitoring RetroArch savefile/savestate directories
 * A whiptail frontend for the script and service above
 
-### arklone.sh ###
+### arklone-saves.sh ###
 Syncs two directories using rclone
 
 Executed by:
-* [arkloned@.service]() when a corresponding _arkloned-*.path_ unit is started.
-* [Cloud Saving.sh]() via EmulationStation
+* [arkloned@.service template]() when a corresponding _arkloned-*.path_ unit is started.
+* [settings.sh]() via EmulationStation
 * Manually
 
-To execute manually, pass two directories as a string to the first argument, in the format `remote@local`.
-The directory string must be escaped as a systemd-escape string:
+To execute manually, pass two directories as a string to the first argument,
+in the format `localDir@remoteDir`.
 
-_Remote directory:_ `retroarch/roms`
-_Local directory:_ `/roms`
-_unescaped string:_ `retroarch/roms@/roms`
-_escaped string:_ `retroarch-roms\x40-roms`
+_Do not use trailing slashes. The remote directory also must not have an opening slash._
 
 ```shell
-$ /opt/arklone/arklone.sh retroarch-roms\x40-roms
+$ /opt/arklone/arklone.sh "/roms@retroarch/roms"
 
 ```
 
@@ -34,19 +31,37 @@ $ /opt/arklone/arklone.sh retroarch-roms\x40-roms
 Calls the ArkOS backup script and syncs the resulting file to the cloud.
 
 Executed by:
-* [Cloud Settings.sh]() See below
+* [settings.sh]() See below
 
 ### systemd units ###
 Four path units are provided to the [arkloned@.service]() template:
 
-* amiberry/savestates@/opt/amiberry/savestates
-* retroarch/roms@/roms  
-* retroarch/saves@/home/ark/.config/retroarch/saves 
-* retroarch/states@/home/ark/.config/retroarch/states 
+* /opt/amiberry/savestates@amiberry/savestates
+* /roms@retroarch/roms
+* /home/ark/.config/retroarch/saves@retroarch/saves
+* /home/ark/.config/retroarch/states@retroarch/states
 
-### Cloud Settings.sh ###
-Four menu options are provided:
-* Select cloud service
+To watch a directory, create a new file at `/opt/arkloned/systemd/arkloned-${myPathUnit}.path`. Only 3 lines are needed:
+
+```shell
+[Path]
+PathChanged=/path/to/watch
+Unit=arkloned@-path-to-watch\x40path-to-sync-to
+```
+
+The `Unit` name should be prefixed with `arkloned@`, followed by an escaped string containing the directories to sync, in the format `localDir@remoteDir`. Do not use trailing slashes. The remote directory must also not have an opening slash. You can generate an escaped directory string using the `systemd-escape` tool:
+
+```shell
+$ systemd-escape "/path/to/watch@path/to/sync/to"
+# outputs:
+# -path-to-watch\x40path-to-sync-to
+```
+
+[settings.sh]() will automatically handle enabling and starting the path unit when the user enables automatic syncing.
+
+### settings.sh ###
+Four whiptail options are provided initially:
+* Set cloud service
 * Manual sync savefiles/savestates
 * Enable/Disable automatic syncing
 * Manual sync ArkOS Settings

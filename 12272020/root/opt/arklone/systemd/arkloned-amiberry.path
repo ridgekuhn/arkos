@@ -1,3 +1,8 @@
 [Path]
 PathChanged=/opt/amiberry/savestates
-Unit=arkloned@amiberry-savestates\x40-opt-amiberry-savestates.service
+Unit=arkloned@-opt-amiberry-savestates\x40amiberry-savestates.service
+
+[Install]
+WantedBy=multi-user.target
+Wants=network-online.target
+After=network-online.target

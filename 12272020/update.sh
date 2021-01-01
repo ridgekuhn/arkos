@@ -4,7 +4,7 @@
 RIDGEK_DATE="12272020"
 # @todo Use production URL
 # RIDGEK_URL="https://raw.githubusercontent.com/christianhaitian/arkos/main/${RIDGEK_DATE}"
-RIDGEK_URL="https://raw.githubusercontent.com/ridgekuhn/arkos/dropbox/${RIDGEK_DATE}"
+RIDGEK_URL="https://raw.githubusercontent.com/ridgekuhn/arkos/cloudbackups/${RIDGEK_DATE}"
 # @todo Delete this if this script gets appended to Update-RG351P.sh
 LOG_FILE="/home/ark/update${RIDGEK_DATE}.log"
 
@@ -35,22 +35,15 @@ if [ ! -f "/home/ark/.config/.update${RIDGEK_DATE}" ]; then
 		sudo unzip -X -o /home/ark/arkosupdate${RIDGEK_DATE}.zip -d /
 		sudo rm -v /home/ark/arkosupdate${RIDGEK_DATE}.zip
 
-		# Set up arklone
-		sudo systemctl link "/opt/arklone/arkloned@.service"
-		sudo find "/opt/arklone/arkloned"*".path" | xargs -I {} bash -c "sudo systemctl link {}"
-		sudo chmod -v a+x "/opt/arklone/arklone.sh"
-		sudo chmod -v a+x "/opt/arklone/arklone-arkos.sh"
-		# Set up EmulationStation scripts
-		sudo chmod -v a+x "/opt/arklone/Cloud Settings.sh"
-		sudo ln -s "/opt/arklone/emulationstation/Cloud Settings.sh" "/opt/system/Cloud Settings.sh"
-		# rclone.conf is stored on EASYROMS partition, link to ~/.config/rclone so rclone can find it
-		ln -s /roms/backup/rclone.conf /home/ark/.config/rclone/rclone.conf
-		sudo chmod 666 /roms/back/rclone/rclone.conf
+		# Install arklone
+		sudo chown -R ark:ark /opt/arklone \
+			&& sudo chmod a+x "/opt/arklone/install.sh"
+		bash "/opt/arklone/install.sh"
 
 		# Set up joy2key
-		sudo chmod -v a+x "/opt/joy2key/listen.sh"
-		sudo chmod -v a+x "/opt/joy2key/RetroPie-Setup/scriptmodules/helpers.sh"
-		sudo chmod -v a+x "/opt/joy2key/RetroPie-Setup/scriptmodules/supplementary/runcommand/joy2key.py"
+		sudo chown -R ark:ark /opt/joy2key \
+			&& sudo chmod a+x "/opt/joy2key/install.sh"
+		bash "/opt/joy2key/install.sh"
 	else
 		printf "\nThe update couldn't complete because the package did not download correctly.\nPlease retry the update again."
 		echo $c_brightness > /sys/devices/platform/backlight/backlight/backlight/brightness
