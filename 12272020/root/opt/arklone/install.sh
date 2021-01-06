@@ -14,7 +14,7 @@ if [ ! -d "${USER_CONFIG_DIR}/rclone" ]; then
 		&& sudo chown ark:ark "${USER_CONFIG_DIR}/rclone" \
 		&& sudo chmod 755 "${USER_CONFIG_DIR}/rclone"
 fi
-sudo ln -s "/roms/backup/rclone.conf" "${USER_CONFIG_DIR}/rclone/rclone.conf"
+sudo ln -s "/roms/backup/rclone/rclone.conf" "${USER_CONFIG_DIR}/rclone/rclone.conf"
 sudo chmod 666 "/roms/backup/rclone/rclone.conf"
 
 #########
