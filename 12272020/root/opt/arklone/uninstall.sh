@@ -1,9 +1,14 @@
 #!/bin/bash
+# arklone uninstallation script
+# by ridgek
+########
+# CONFIG
+########
+source "/opt/arklone/config.sh"
+
 ###########
 # PREFLIGHT
 ###########
-source "/opt/arklone/config.sh"
-
 UNITS=($(systemctl list-unit-files | awk '/arkloned/ && /enabled/ || linked {print $1}'))
 
 #########

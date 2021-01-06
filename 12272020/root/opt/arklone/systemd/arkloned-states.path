@@ -1,8 +1,0 @@
-[Path]
-PathChanged=/home/ark/.config/retroarch/states
-Unit=arkloned@-home-ark-.config-retroarch-states\x40retroarch-states.service
-
-[Install]
-WantedBy=multi-user.target
-Wants=network-online.target
-After=network-online.target

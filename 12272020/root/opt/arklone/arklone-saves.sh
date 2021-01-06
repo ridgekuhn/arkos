@@ -6,14 +6,17 @@
 #
 #	@usage
 #		$ /opt/arklone/arklone.sh "/roms@retroarch/roms"
+########
+# CONFIG
+########
+source "/opt/arklone/config.sh"
+
 ###########
 # PREFLIGHT
 ###########
-source "/opt/arklone/config.sh"
-
 LOCALDIR=${1%@*}
 REMOTEDIR=${1#*@}
-LOG_FILE="/home/ark/.config/arklone/arklone-saves.log"
+LOG_FILE="${USER_CONFIG_DIR}/arklone/arklone-saves.log"
 
 # Delete log if last modification is older than system uptime
 if [ -f "${LOG_FILE}" ] \
@@ -47,9 +50,9 @@ fi
 if [ "${LOCALDIR}" = "/roms" ]; then
 	continueSync=false
 
-	for config in ${RETROARCH_CONFIGS[@]}; do
-		savefiles_in_content_dir=$(awk '/^savefiles_in_content_dir/{ gsub("\"","",$3); print $3}' "${config}")
-		savestates_in_content_dir=$(awk '/^savestates_in_content_dir/{ gsub("\"","",$3); print $3}' "${config}")
+	for retroarch in ${RETROARCHS[@]}; do
+		savefiles_in_content_dir=$(awk '/^savefiles_in_content_dir/{ gsub("\"","",$3); print $3}' "${retroarch}/retroarch.cfg")
+		savestates_in_content_dir=$(awk '/^savestates_in_content_dir/{ gsub("\"","",$3); print $3}' "${retroarch}/retroarch.cfg")
 
 		if [ "${savefiles_in_content_dir}" = "true" ] \
 			|| [ "${savestates_in_content_dir}" = "true" ]

@@ -1,7 +1,9 @@
 #!/bin/bash
-###########
-# PREFLIGHT
-###########
+# arklone installation script
+# by ridgek
+########
+# CONFIG
+########
 source "/opt/arklone/config.sh"
 
 ##############

@@ -1,6 +1,11 @@
 #!/bin/bash
 # arklone settings utility
 # by ridgek
+########
+# CONFIG
+########
+source "/opt/arklone/config.sh"
+
 #########
 # HELPERS
 #########
@@ -21,7 +26,7 @@ function printMenu() {
 #
 # @returns {string} space-delimted array of unescaped instance names
 function getInstanceNames() {
-	local units=($(find "/opt/arklone/systemd/"*".path"))
+	local units=($(find "${ARKLONE_DIR}/systemd/"*".path"))
 
 	for (( i = 0; i < ${#units[@]}; i++ )); do
 		local escapedName=$(awk -F '@' '/Unit/ {split($2, arr, ".service"); print arr[1]}' "${units[i]}")
@@ -73,8 +78,6 @@ function alreadyRunning() {
 ###########
 # PREFLIGHT
 ###########
-source "/opt/arklone/config.sh"
-
 TITLE="arklone cloud sync utility"
 INSTANCES=$(getInstanceNames)
 
@@ -227,7 +230,7 @@ function manualBackupArkOSScreen() {
 	fi
 }
 
-############
+#####
 # RUN
-############
+#####
 homeScreen
