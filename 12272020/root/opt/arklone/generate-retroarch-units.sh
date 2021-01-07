@@ -21,7 +21,7 @@ for retroarch_dir in ${RETROARCHS[@]}; do
 		# Path to systemd unit
 		unit="${ARKLONE_DIR}/systemd/arkloned-${retroarch}-${savetype}s.auto.path"
 		# local_directory@remote_directory
-		instanceName=$(systemd-escape "${savetype_directory}@${retroarch}/${savetype}s")
+		instanceName=$(systemd-escape "${savetype_directory}@${retroarch}/${savetype}s@retroarch")
 		# Check if unit is already registered with systemd
 		linked=$(systemctl list-unit-files | awk -v unit="${unit##*/}" '$0~unit {print $1}')
 

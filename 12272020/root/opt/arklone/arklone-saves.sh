@@ -2,7 +2,7 @@
 # rclone cloud syncing for ArkOS
 # by ridgek
 #
-# @param $1 {string} directory paths in format: "sourceDir@targetDir"
+# @param $1 {string} directory paths in format: "sourceDir@targetDir@filterFile"
 #
 #	@usage
 #		$ /opt/arklone/arklone.sh "/roms@retroarch/roms"
@@ -14,8 +14,7 @@ source "/opt/arklone/config.sh"
 ###########
 # PREFLIGHT
 ###########
-LOCALDIR=${1%@*}
-REMOTEDIR=${1#*@}
+IFS="@" read -r LOCALDIR REMOTEDIR FILTER <<< "${1}"
 LOG_FILE="${USER_CONFIG_DIR}/arklone/arklone-saves.log"
 
 # Delete log if last modification is older than system uptime
@@ -72,10 +71,10 @@ fi
 # SYNC SAVEFILES TO CLOUD
 #########################
 echo "Sending ${LOCALDIR}/ to ${REMOTE_CURRENT}:${REMOTEDIR}/"
-rclone copy "${LOCALDIR}/" "${REMOTE_CURRENT}:${REMOTEDIR}/" --filter-from /opt/arklone/rclone/filters.conf -v
+rclone copy "${LOCALDIR}/" "${REMOTE_CURRENT}:${REMOTEDIR}/" --filter-from "/opt/arklone/rclone/${FILTER}.filter" -v
 
 echo "Receiving ${REMOTE_CURRENT}:${REMOTEDIR}/ to ${LOCALDIR}/"
-rclone copy "${REMOTE_CURRENT}:${REMOTEDIR}/" "${LOCALDIR}/" --filter-from /opt/arklone/rclone/filters.conf -v
+rclone copy "${REMOTE_CURRENT}:${REMOTEDIR}/" "${LOCALDIR}/" --filter-from "/opt/arklone/rclone/${FILTER}.conf" -v
 
 ##########
 # TEARDOWN

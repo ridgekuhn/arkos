@@ -143,6 +143,7 @@ function setCloudScreen() {
 function manualSyncSavesScreen() {
 	local script="arklone-saves.sh"
 	local log_file=$(awk '/^LOG_FILE/ { split($1, a, "="); gsub("\"", "", a[2]); print a[2]}' "${ARKLONE_DIR}/${script}")
+	local localdirs=$(for instance in ${INSTANCES[@]}; do printf "${instance%@*@*} "; done)
 
 	alreadyRunning "${script}" "${log_file}"
 
@@ -152,17 +153,16 @@ function manualSyncSavesScreen() {
 		local selection=$(whiptail \
 			--title "${TITLE}" \
 			--menu \
-				"Choose a directory pair to sync:" \
+				"Choose a directory pair to sync with (${REMOTE_CURRENT}):" \
 				16 60 8 \
-				$(printMenu "${INSTANCES}") \
+				$(printMenu "${localdirs}") \
 			3>&1 1>&2 2>&3 \
 		)
 
 		if [ ! -z $selection ]; then
 			local instances=(${INSTANCES})
 			local instance=${instances[$selection]}
-			local localdir=${instance%@*}
-			local remotedir=${instance#*@}
+			IFS="@" read -r localdir remotedir filter <<< "${instance}"
 
 			# Sync the local and remote directories
 			"${ARKLONE_DIR}/${script}" "${instance}"
@@ -177,7 +177,7 @@ function manualSyncSavesScreen() {
 				whiptail \
 					--title "${TITLE}" \
 					--msgbox \
-						"Update failed. Please check your internet connection and try again." \
+						"Update failed. Please check your internet connection and settings." \
 						16 80 8
 			fi
 		fi
@@ -192,7 +192,6 @@ function autoSyncSavesScreen() {
 	if [ -z "${AUTOSYNC}" ]; then
 		sudo systemctl link "${ARKLONE_DIR}/systemd/arkloned@.service"
 
-		# @TODO generate retroarch path units based on retroarch.cfg and enable rest manually
 		sudo find "${ARKLONE_DIR}/systemd/"*".path" \
 			| xargs -I {} bash -c 'UNIT="{}" \
 				&& sudo systemctl enable "${UNIT}" \
