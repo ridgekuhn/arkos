@@ -162,7 +162,7 @@ function manualSyncSavesScreen() {
 		if [ ! -z $selection ]; then
 			local instances=(${INSTANCES})
 			local instance=${instances[$selection]}
-			IFS="@" read -r localdir remotedir filter <<< "${instance}"
+			IFS="@" read -r LOCALDIR REMOTEDIR FILTER <<< "${instance}"
 
 			# Sync the local and remote directories
 			"${ARKLONE_DIR}/${script}" "${instance}"
@@ -171,7 +171,7 @@ function manualSyncSavesScreen() {
 				whiptail \
 					--title "${TITLE}" \
 					--msgbox \
-						"${localdir} synced to ${REMOTE_CURRENT}:${remotedir}. Log saved to ${log_file}." \
+						"${LOCALDIR} synced to ${REMOTE_CURRENT}:${REMOTEDIR}. Log saved to ${log_file}." \
 						16 80 8
 			else
 				whiptail \
