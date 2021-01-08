@@ -1,44 +1,55 @@
 #!/bin/bash
 # ArkOS Backup Settings to Cloud
 # By ridgek
+########
+# CONFIG
+########
+source "/opt/arklone/config.sh"
+
 ###########
 # PREFLIGHT
 ###########
 # Use same log as "/opt/system/Advanced/Backup Settings.sh"
 LOG_FILE="/roms/backup/arkosbackup.log"
 
-# Capture input
-sudo rg351p-js2xbox --silent -t oga_joypad &
-sudo ln -s /dev/input/event3 /dev/input/by-path/platform-odroidgo2-joypad-event-joystick
-sudo chmod 777 /dev/input/by-path/platform-odroidgo2-joypad-event-joystick
+# Delete old log
+if [ -f "${LOG_FILE}" ]; then
+	rm -f "${LOG_FILE}"
+fi
 
-#######################
-# BACKUP ARKOS TO CLOUD
-#######################
-# @todo Is there a way to just implement select boxes so the user doesn't have to type?
-keep=`osk "This will create a backup of your settings at \"/roms/backup/arkosbackup.tar.gz\". Do you want to keep this file after it is uploaded to the cloud? (type \"y\" or \"n\")" | tail -n 1`
-
-# Run normal ArkOS settings backup script
-bash "/opt/system/Advanced/Backup Settings.sh"
-
-if [ $? != 0 ]; then
-	# Sync backup to cloud
-	rclone copy /roms/backup/ remote:ArkOS/ -v | tee -a "${LOG_FILE}"
-
-	if [ "${keep}" != "y" ] && [ "${keep}" != "Y" ]; then
-		sudo rm -v /roms/backup/arkosbackup.tar.gz | tee -a "${LOG_FILE}"
-	fi
+# Begin logging
+if touch "${LOG_FILE}" \
+	&& chown ark:ark "${LOG_FILE}" \
+	&& chmod a+r+w "${LOG_FILE}"
+then
+	exec &> >(tee -a "${LOG_FILE}")
 else
-	printf "\nCould not create backup file! Exiting...\n" | tee -a "${LOG_FILE}"
+	echo "Could not open log file. Exiting..."
 	exit 1
 fi
 
-# Sync save files to cloud
-bash "/opt/system/Advanced/Sync Savefiles to Cloud.sh" | tee -a "${LOG_FILE}"
+#####
+# RUN
+#####
+printf "\n======================================================\n"
+echo "Started new cloud sync at $(date)"
+echo "------------------------------------------------------"
 
-##########
-# TEARDOWN
-##########
-# Release input
-sudo kill $(pidof rg351p-js2xbox)
-sudo rm /dev/input/by-path/platform-odroidgo2-joypad-event-joystick
+# Exit if no internet
+if ! : >/dev/tcp/8.8.8.8/53; then
+	echo "No internet connection. Exiting..."
+	exit 1
+fi
+
+# Run normal ArkOS settings backup script
+echo "Backing up your ArkOS settings..."
+bash "/opt/system/Advanced/Backup Settings.sh"
+
+if [ $? = 0 ]; then
+	# Sync backup to cloud
+	echo "Sending ArkOS backup to ${REMOTE_CURRENT}"
+	rclone copy /roms/backup/ ${REMOTE_CURRENT}:ArkOS/ -v
+else
+	printf "\nCould not create backup file! Exiting...\n"
+	exit 1
+fi

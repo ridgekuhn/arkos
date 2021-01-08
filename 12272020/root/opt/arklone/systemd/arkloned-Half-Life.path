@@ -4,5 +4,3 @@ Unit=arkloned@-roms-ports-Half\x2dLife-valve-save\x40Half\x2dLife-valve-save\x40
 
 [Install]
 WantedBy=multi-user.target
-Wants=network-online.target
-After=network-online.target

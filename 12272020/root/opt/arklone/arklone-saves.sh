@@ -15,7 +15,7 @@ source "/opt/arklone/config.sh"
 # PREFLIGHT
 ###########
 IFS="@" read -r LOCALDIR REMOTEDIR FILTER <<< "${1}"
-LOG_FILE="${USER_CONFIG_DIR}/arklone/arklone-saves.log"
+LOG_FILE="/home/ark/.config/arklone/arklone-saves.log"
 
 # Delete log if last modification is older than system uptime
 if [ -f "${LOG_FILE}" ] \
@@ -70,15 +70,11 @@ fi
 #########################
 # SYNC SAVEFILES TO CLOUD
 #########################
-if [ ! -z "${FILTER}" ]; then
-	FILTER_STRING="--filter-from \"/opt/arklone/rclone/${FILTER}.filter\""
-fi
-
 echo "Sending ${LOCALDIR}/ to ${REMOTE_CURRENT}:${REMOTEDIR}/"
-rclone copy "${LOCALDIR}/" "${REMOTE_CURRENT}:${REMOTEDIR}/" -v ${FILTER_STRING}
+rclone copy "${LOCALDIR}/" "${REMOTE_CURRENT}:${REMOTEDIR}/" --filter-from "/opt/arklone/rclone/${FILTER}.filter" -v
 
 echo "Receiving ${REMOTE_CURRENT}:${REMOTEDIR}/ to ${LOCALDIR}/"
-rclone copy "${REMOTE_CURRENT}:${REMOTEDIR}/" "${LOCALDIR}/" -v ${FILTER_STRING}
+rclone copy "${REMOTE_CURRENT}:${REMOTEDIR}/" "${LOCALDIR}/" --filter-from "/opt/arklone/rclone/${FILTER}.conf" -v
 
 ##########
 # TEARDOWN

@@ -1,8 +1,6 @@
 [Path]
 PathChanged=/roms/ports/VVVVVV/saves
-Unit=-roms-ports-VVVVVV-saves\x40VVVVVV-saves\x40VVVVVV.service
+Unit=arkloned@-roms-ports-VVVVVV-saves\x40VVVVVV-saves\x40VVVVVV.service
 
 [Install]
 WantedBy=multi-user.target
-Wants=network-online.target
-After=network-online.target

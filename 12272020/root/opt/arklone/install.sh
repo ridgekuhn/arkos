@@ -29,6 +29,9 @@ sudo chmod -v a+r+x "${ARKLONE_DIR}/arklone-saves.sh"
 sudo chmod -v a+r+x "${ARKLONE_DIR}/arklone-arkos.sh"
 sudo chmod -v a+r+x "${ARKLONE_DIR}/dialogs/settings.sh"
 
+# Generate retroarch path units
+"${ARKLONE_DIR}/generate-retroarch-units.sh"
+
 # Create arklone user config dir
 if [ ! -d "${USER_CONFIG_DIR}/arklone" ]; then
 	sudo mkdir "${USER_CONFIG_DIR}/arklone" \
