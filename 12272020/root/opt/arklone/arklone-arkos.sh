@@ -19,8 +19,8 @@ fi
 
 # Begin logging
 if touch "${LOG_FILE}" \
-	&& chown ark:ark "${LOG_FILE}" \
-	&& chmod a+r+w "${LOG_FILE}"
+	&& sudo chown ark:ark "${LOG_FILE}" \
+	&& sudo chmod a+r+w "${LOG_FILE}"
 then
 	exec &> >(tee -a "${LOG_FILE}")
 else

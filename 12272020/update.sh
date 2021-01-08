@@ -7,6 +7,7 @@ RIDGEK_DATE="12272020"
 RIDGEK_URL="https://raw.githubusercontent.com/ridgekuhn/arkos/cloudbackups/${RIDGEK_DATE}"
 # @todo Delete this if this script gets appended to Update-RG351P.sh
 LOG_FILE="/home/ark/update${RIDGEK_DATE}.log"
+c_brightness="$(cat /sys/devices/platform/backlight/backlight/backlight/brightness)"
 
 if [ ! -f "/home/ark/.config/.update${RIDGEK_DATE}" ]; then
 	# Begin logging
@@ -54,7 +55,7 @@ if [ ! -f "/home/ark/.config/.update${RIDGEK_DATE}" ]; then
 	printf "\nUpdate boot text to reflect current version of ArkOS\n"
 		sudo sed -i "/title\=/c\title\=ArkOS 1.5 ($UPDATE_DATE)" /usr/share/plymouth/themes/text.plymouth
 	else
-		printf "\nThe update couldn't complete because the package did not download correctly.\nPlease retry the update again."
+		printf "\nThe update couldn't complete because there was a problem with the package.\nPlease retry the update again."
 		echo $c_brightness > /sys/devices/platform/backlight/backlight/backlight/brightness
 		exit 1
 	fi
