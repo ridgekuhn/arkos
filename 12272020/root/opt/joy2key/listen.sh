@@ -22,13 +22,13 @@
 ###########
 # PREFLIGHT
 ###########
-if [ ! -z $1 ] && [ -f $1 ]; then
-	RUNCOMMAND=$1
+if [ ! -z "${1}" ] && [ -f "${1}" ]; then
+	RUNCOMMAND="${1}"
 else
-	echo "Could not run script $1"
+	echo "Could not run script ${1}"
 fi
 
-if [ ! -z ${@:2} ]; then
+if [ ! -z "${2}" ]; then
 	KEY_MAPPINGS=(${@:2})
 else
 	# Default keymap to pass to joy2keyStart (left, right, up, down, return, esc)
@@ -54,7 +54,7 @@ errorOut () {
 
 	# Print message
 	if [ ! -z "${msg}" ]; then
-		msgbox "${msg}"
+		echo "${msg}"
 	fi
 
 	exit ${exitCode}
@@ -79,7 +79,7 @@ fi
 # RUN COMMAND
 #############
 if [ ! -z "${RUNCOMMAND}" ]; then
-	bash "${RUNCOMMAND}"
+	"${RUNCOMMAND}"
 fi
 
 if [ $? != 0 ]; then
