@@ -48,8 +48,6 @@ Unit=arkloned@${instanceName}.service
 
 [Install]
 WantedBy=multi-user.target
-Wants=network-online.target
-After=network-online.target
 EOF
 		fi
 	done

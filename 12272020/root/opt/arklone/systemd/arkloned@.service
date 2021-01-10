@@ -1,5 +1,7 @@
 [Unit]
 Description=Arklone - rclone sync for ArkOS
+Wants=network-online.target
+After=network-online.target
 
 [Service]
 Type=oneshot
@@ -10,5 +12,3 @@ ExecStart=/bin/bash -c "/opt/arklone/arklone-saves.sh %I"
 
 [Install]
 WantedBy=multi-user.target
-Wants=network-online.target
-After=network-online.target
