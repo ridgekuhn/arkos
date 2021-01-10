@@ -179,7 +179,7 @@ function manualSyncSavesScreen() {
 		local selection=$(whiptail \
 			--title "${TITLE}" \
 			--menu \
-				"Choose a directory pair to sync with (${REMOTE_CURRENT}):" \
+				"Choose a directory to sync with (${REMOTE_CURRENT}):" \
 				16 60 8 \
 				$(printMenu "${localdirs}") \
 			3>&1 1>&2 2>&3 \
@@ -198,13 +198,13 @@ function manualSyncSavesScreen() {
 					--title "${TITLE}" \
 					--msgbox \
 						"${localdir} synced to ${REMOTE_CURRENT}:${remotedir}. Log saved to ${log_file}." \
-						16 80 8
+						16 56 8
 			else
 				whiptail \
 					--title "${TITLE}" \
 					--msgbox \
 						"Update failed. Please check your internet connection and settings." \
-						16 80 8
+						16 56 8
 			fi
 		fi
 
@@ -218,7 +218,7 @@ function autoSyncSavesScreen() {
 		--title "${TITLE}" \
 		--infobox \
 			"Please wait while we configure your settings..." \
-			16 80 8
+			16 56 8
 
 	# Enable if no units are linked to systemd
 	if [ -z "${AUTOSYNC}" ]; then
@@ -275,7 +275,7 @@ function manualBackupArkOSScreen() {
 			--title "${TITLE}" \
 			--yesno \
 				"This will create a backup of your settings at /roms/backup/arkosbackup.tar.gz. Do you want to keep this file after it is uploaded to ${REMOTE_CURRENT}?" \
-				16 60
+				16 56
 
 		keep=$?
 
@@ -290,13 +290,13 @@ function manualBackupArkOSScreen() {
 				--title "${TITLE}" \
 				--msgbox \
 					"ArkOS backup synced to ${REMOTE_CURRENT}:ArkOS. Log saved to ${log_file}." \
-					16 80 8
+					16 56 8
 		else
 			whiptail \
 				--title "${TITLE}" \
 				--msgbox \
 					"Update failed. Please check your internet connection and settings." \
-					16 80 8
+					16 56 8
 		fi
 
 		homeScreen
@@ -309,7 +309,7 @@ function regenRAunitsScreen() {
 		--title "${TITLE}" \
 		--infobox \
 			"Please wait while we configure your settings..." \
-			16 80 8
+			16 56 8
 
 	"${ARKLONE_DIR}/generate-retroarch-units.sh"
 
