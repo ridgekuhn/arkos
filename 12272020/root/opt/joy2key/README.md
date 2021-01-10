@@ -22,16 +22,19 @@ Stops listening for joypad input.
 Maps joypad input to keypresses.
 
 [joy2key.py]() performs autodetection of the joypad passed to it,
-and attempts to pair the joypad with a matching RetroArch configuration file stored in 
-`path/to/your/retroarch/autoconfig/udev/`. If no matching configuration is found,
+and attempts to pair the joypad with a matching
+RetroArch-style configuration file stored in 
+`/opt/joy2key/udev`. If no matching configuration is found,
 the script defaults to `retroarch.cfg`.
 
 ### listen.sh ###
-A wrapper script for `joy2keyStart`/`joy2keyStop` which handles setup and teardown
-for calling external scripts. It allows failed scripts to exit cleanly
+A wrapper script for `joy2keyStart`/`joy2keyStop`
+which handles setup and teardown for calling external scripts.
+It allows failed scripts to exit cleanly
 and stop joy2key.py from continuing to listen to input.
 
-`listen.sh` takes two arguments; a script to run, and a keypress map to pass to `joy2key.py`.
+`listen.sh` takes two+ arguments;
+a script to run, and a keypress map to pass to `joy2key.py`.
 
 ### Listening Manually ###
 
@@ -67,7 +70,7 @@ fi
 # and will continue to send keypresses from the joypad.
 # This could cause unexpected behavior,
 # especially if the analog sticks are "drifting"
-bash "/run/my/script.sh"
+"/run/my/script.sh"
 
 ##########
 # TEARDOWN

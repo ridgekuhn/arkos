@@ -58,7 +58,7 @@ def sysdev_get(key, sysdev_path):
     return value
 
 def get_button_codes(dev_path):
-    js_cfg_dir = CONFIG_DIR + 'retroarch/autoconfig/udev/'
+    js_cfg_dir = '/opt/joy2key/udev/'
     js_cfg = ''
     dev_name = ''
     dev_button_codes = list(default_button_codes)

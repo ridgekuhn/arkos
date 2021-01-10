@@ -39,5 +39,5 @@ if [ ! -d "${USER_CONFIG_DIR}/arklone" ]; then
 		&& sudo chmod a+r+w "${USER_CONFIG_DIR}/arklone"
 fi
 
-# Link settings dialog script to EmulationStation
-sudo ln -s "${ARKLONE_DIR}/dialogs/settings.sh" "/opt/system/Cloud Settings.sh"
+# Grant permissino to ES launcher
+sudo chmod -v a+r+x "/opt/system/Cloud Settings.sh"
