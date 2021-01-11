@@ -77,28 +77,6 @@ function alreadyRunning() {
 	fi
 }
 
-# Check if RetroArch saves to content directory
-#
-# @returns 1 if no retroarch.cfg in ${RETROARCHS[@]} contains
-#		savefiles_in_content_dir = "true" || savestates_in_content_dir = "true"
-function raSavesInContentDir() {
-	for retroarch_dir in ${RETROARCHS[@]}; do
-		retroarch=${retroarch_dir##*/}
-
-		for savetype in ${savetypes[@]}; do
-			# Get settings from ${retroarch}/retroarch.cfg
-			savetypes_in_content_dir=$(awk -v savetypes_in_content_dir="${savetype}s_in_content_dir" '$0~savetypes_in_content_dir { gsub("\"","",$3); print $3}' "${retroarch_dir}/retroarch.cfg")
-
-			# Generate unit if ${savetype}s_in_content_dir = "false" in retroarch.cfg
-			if [ "${savetypes_in_content_dir}" = "true" ]; then
-				return 0
-			fi
-		done
-	done
-
-	return 1
-}
-
 ###########
 # PREFLIGHT
 ###########
@@ -227,8 +205,8 @@ function autoSyncSavesScreen() {
 		sudo systemctl link "${ARKLONE_DIR}/systemd/arkloned@.service"
 
 		for unit in ${units[@]}; do
-			# Skip enabling RetroArch content directory root unit for now
-			if [ "${unit}" = "${ARKLONE_DIR}/systemd/arkloned-retroarch-contentroot.path" ]; then
+			# Skip *.auto.path units
+			if [ ! -z `expr match "${unit}" '.*\(.auto.path\)'` ]; then
 				continue
 			fi
 
@@ -236,15 +214,8 @@ function autoSyncSavesScreen() {
 				&& sudo systemctl start "${unit##*/}"
 		done
 
-		# Enable RetroArch content directory root unit
-		# if any retroarch.cfg in ${RETROARCHS[@]} contains
-		#	savefiles_in_content_dir = "true" || savestates_in_content_dir = "true"
-		raSavesInContentDir
-
-		if [ $? = 0 ]; then
-			sudo systemctl enable "${ARKLONE_DIR}/systemd/arkloned-retroarch-contentroot.path" \
-				&& sudo systemctl start "arkloned-retroarch-contentroot.path"
-		fi
+		# Generate RetroArch units
+		"${ARKLONE_DIR}/generate-retroarch-units.sh"
 
 	# Disable enabled units
 	else

@@ -5,6 +5,7 @@ RETROARCHS=(\
 	"/home/ark/.config/retroarch" \
 	"/home/ark/.config/retroarch32"\
 )
+RETROARCH_CONTENT_ROOT="/roms"
 
 ARKLONE_DIR="/opt/arklone"
 

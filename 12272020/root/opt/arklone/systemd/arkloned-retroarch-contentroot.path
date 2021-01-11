@@ -1,6 +1,0 @@
-[Path]
-PathChanged=/roms
-Unit=arkloned@-roms\x40retroarch-roms\x40retroarch.service
-
-[Install]
-WantedBy=multi-user.target
