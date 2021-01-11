@@ -18,10 +18,7 @@ if [ -f "${LOG_FILE}" ]; then
 fi
 
 # Begin logging
-if touch "${LOG_FILE}" \
-	&& sudo chown ark:ark "${LOG_FILE}" \
-	&& sudo chmod a+r+w "${LOG_FILE}"
-then
+if touch "${LOG_FILE}"; then
 	exec &> >(tee -a "${LOG_FILE}")
 else
 	echo "Could not open log file. Exiting..."
@@ -45,11 +42,12 @@ fi
 echo "Backing up your ArkOS settings..."
 bash "/opt/system/Advanced/Backup Settings.sh"
 
-if [ $? = 0 ]; then
-	# Sync backup to cloud
-	echo "Sending ArkOS backup to ${REMOTE_CURRENT}"
-	rclone copy /roms/backup/ ${REMOTE_CURRENT}:ArkOS/ -v
-else
+if [ $? != 0 ]; then
 	printf "\nCould not create backup file! Exiting...\n"
 	exit 1
+else
+	# Sync backup to cloud
+	echo "Sending ArkOS backup to ${REMOTE_CURRENT}"
+	rclone copy /roms/backup/ ${REMOTE_CURRENT}:ArkOS/ -v --filter "+ arkosbackup*" --filter "- *"
 fi
+

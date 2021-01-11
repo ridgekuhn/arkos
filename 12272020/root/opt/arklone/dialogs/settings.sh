@@ -295,7 +295,7 @@ function manualBackupArkOSScreen() {
 			whiptail \
 				--title "${TITLE}" \
 				--msgbox \
-					"Update failed. Please check your internet connection and settings." \
+					"Update failed. Please check the log file at ${log_file}." \
 					16 56 8
 		fi
 
