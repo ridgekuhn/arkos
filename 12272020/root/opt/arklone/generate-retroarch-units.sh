@@ -20,7 +20,7 @@ for retroarch_dir in ${RETROARCHS[@]}; do
 
 		# Path to systemd unit
 		unit="${ARKLONE_DIR}/systemd/arkloned-${retroarch}-${savetype}s.auto.path"
-		# local_directory@remote_directory
+		# Instance name: local_directory@remote_directory@[filter]
 		instanceName=$(systemd-escape "${savetype_directory}@${retroarch}/${savetype}s@retroarch")
 		# Check if unit is already registered with systemd
 		linked=$(systemctl list-unit-files | awk -v unit="${unit##*/}" '$0~unit {print $1}')
@@ -49,6 +49,11 @@ Unit=arkloned@${instanceName}.service
 [Install]
 WantedBy=multi-user.target
 EOF
+
+			# Enable unit if auto-syncing is enabled
+			if [ ! -z ${AUTOSYNC} ]; then
+				sudo systemctl enable "${unit}"
+			fi
 		fi
 	done
 done
