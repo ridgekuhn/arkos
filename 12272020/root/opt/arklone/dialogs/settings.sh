@@ -26,7 +26,7 @@ function printMenu() {
 #
 # @returns {string} space-delimted array of unescaped instance names
 function getInstanceNames() {
-	local units=($(find "${ARKLONE_DIR}/systemd/"*".path"))
+	local units=($(find "${ARKLONE_DIR}/systemd/units/"*".path"))
 
 	for (( i = 0; i < ${#units[@]}; i++ )); do
 		local escapedName=$(awk -F '@' '/Unit/ {split($2, arr, ".service"); print arr[1]}' "${units[i]}")
@@ -52,7 +52,7 @@ function alreadyRunning() {
 	if [ ! -z $2 ]; then
 		local log_file="${2}"
 	else
-		local log_file=$(awk '/^LOG_FILE/ { split($1, a, "="); gsub("\"", "", a[2]); print a[2]}' "${ARKLONE_DIR}/${script}")
+		local log_file=$(awk '/^LOG_FILE/ { split($1, a, "="); gsub("\"", "", a[2]); print a[2]}' "${ARKLONE_DIR}/rclone/scripts/${script}")
 	fi
 
 	local running=$(pgrep "${script}")
@@ -146,8 +146,8 @@ function setCloudScreen() {
 # Manual sync savefiles/savestates dialog
 function manualSyncSavesScreen() {
 	local script="arklone-saves.sh"
-	local log_file=$(awk '/^LOG_FILE/ { split($1, a, "="); gsub("\"", "", a[2]); print a[2]}' "${ARKLONE_DIR}/${script}")
-	local localdirs=$(for instance in ${INSTANCES[@]}; do printf "${instance%@*@*} "; done)
+	local log_file=$(awk '/^LOG_FILE/ { split($1, a, "="); gsub("\"", "", a[2]); print a[2]}' "${ARKLONE_DIR}/rclone/scripts/${script}")
+	local localdirs=$(for instance in ${INSTANCES[@]}; do filter="$(echo ${instance##*@} | awk -F '-' '/retroarch/ {str="("$2")"; print str}')"; printf "${instance%@*@*}${filter} "; done)
 
 	alreadyRunning "${script}" "${log_file}"
 
@@ -169,7 +169,7 @@ function manualSyncSavesScreen() {
 			IFS="@" read -r localdir remotedir filter <<< "${instance}"
 
 			# Sync the local and remote directories
-			"${ARKLONE_DIR}/${script}" "${instance}"
+			"${ARKLONE_DIR}/rclone/scripts/${script}" "${instance}"
 
 			if [ $? = 0 ]; then
 				whiptail \
@@ -181,7 +181,7 @@ function manualSyncSavesScreen() {
 				whiptail \
 					--title "${TITLE}" \
 					--msgbox \
-						"Update failed. Please check your internet connection and settings." \
+						"Update failed. Please check the log file at ${log_file}." \
 						16 56 8
 			fi
 		fi
@@ -200,9 +200,9 @@ function autoSyncSavesScreen() {
 
 	# Enable if no units are linked to systemd
 	if [ -z "${AUTOSYNC}" ]; then
-		local units=($(find "${ARKLONE_DIR}/systemd/"*".path"))
+		local units=($(find "${ARKLONE_DIR}/systemd/units/"*".path"))
 
-		sudo systemctl link "${ARKLONE_DIR}/systemd/arkloned@.service"
+		sudo systemctl link "${ARKLONE_DIR}/systemd/units/arkloned@.service"
 
 		for unit in ${units[@]}; do
 			# Skip *.auto.path units
@@ -215,7 +215,7 @@ function autoSyncSavesScreen() {
 		done
 
 		# Generate RetroArch units
-		"${ARKLONE_DIR}/generate-retroarch-units.sh"
+		"${ARKLONE_DIR}/systemd/scripts/generate-retroarch-units.sh"
 
 	# Disable enabled units
 	else
@@ -235,7 +235,7 @@ function autoSyncSavesScreen() {
 # Manual backup ArkOS settings screen
 function manualBackupArkOSScreen() {
 	local script="arklone-arkos.sh"
-	local log_file=$(awk '/^LOG_FILE/ { split($1, a, "="); gsub("\"", "", a[2]); print a[2]}' "${ARKLONE_DIR}/${script}")
+	local log_file=$(awk '/^LOG_FILE/ { split($1, a, "="); gsub("\"", "", a[2]); print a[2]}' "${ARKLONE_DIR}/rclone/scripts/${script}")
 
 	alreadyRunning "${script}" "${log_file}"
 
@@ -250,7 +250,7 @@ function manualBackupArkOSScreen() {
 
 		keep=$?
 
-		"${ARKLONE_DIR}/${script}"
+		"${ARKLONE_DIR}/rclone/scripts/${script}"
 
 		if [ $? = 0 ]; then
 			if [ $keep != 0 ]; then

@@ -21,15 +21,13 @@ if [ ! -z $UNITS ]; then
 	done
 fi
 
-# Unlink settings dialog script from Emulationstation
-sudo rm "/opt/system/Cloud Settings.sh"
-
 # Remove arklone user config dir
 sudo rm -r "${USER_CONFIG_DIR}/arklone"
 
 # Print confirmation
 echo "======================================================================"
 echo "arklone has been uninstalled, but some files must be deleted manually:"
+echo "/opt/system/Cloud Settings.sh"
 echo "/opt/arklone/"
 echo "${USER_CONFIG_DIR}/rclone/"
 echo "/roms/backup/rclone/rclone.conf"

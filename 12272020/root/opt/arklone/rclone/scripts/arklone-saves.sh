@@ -46,7 +46,7 @@ if ! : >/dev/tcp/8.8.8.8/53; then
 fi
 
 # Exit if nothing to do
-if [ "${LOCALDIR}" = "/roms" ]; then
+if [ "${LOCALDIR}" = "${RETROARCH_CONTENT_ROOT}" ]; then
 	continueSync=false
 
 	for retroarch in ${RETROARCHS[@]}; do
@@ -70,11 +70,23 @@ fi
 #########################
 # SYNC SAVEFILES TO CLOUD
 #########################
+if [ ! -z $FILTER ]; then
+	FILTERSTRING="--filter-from ${ARKLONE_DIR}/rclone/filters/${FILTER}.filter"
+fi
+
 echo "Sending ${LOCALDIR}/ to ${REMOTE_CURRENT}:${REMOTEDIR}/"
-rclone copy "${LOCALDIR}/" "${REMOTE_CURRENT}:${REMOTEDIR}/" --filter-from "/opt/arklone/rclone/${FILTER}.filter" -v
+rclone copy "${LOCALDIR}/" "${REMOTE_CURRENT}:${REMOTEDIR}/" ${FILTERSTRING} -u -v
+
+if [ $? != 0 ]; then
+	exit 1
+fi
 
 echo "Receiving ${REMOTE_CURRENT}:${REMOTEDIR}/ to ${LOCALDIR}/"
-rclone copy "${REMOTE_CURRENT}:${REMOTEDIR}/" "${LOCALDIR}/" --filter-from "/opt/arklone/rclone/${FILTER}.conf" -v
+rclone copy "${REMOTE_CURRENT}:${REMOTEDIR}/" "${LOCALDIR}/" ${FILTERSTRING} -u -v
+
+if [ $? != 0 ]; then
+	exit 1
+fi
 
 ##########
 # TEARDOWN

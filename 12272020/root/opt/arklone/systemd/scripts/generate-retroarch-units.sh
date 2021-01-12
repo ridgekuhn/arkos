@@ -19,7 +19,7 @@ source "/opt/arklone/config.sh"
 function unitExists() {
 	local localDir="${1}"
 	local filter="${2}"
-	local existingUnits=($(find "${ARKLONE_DIR}/systemd/"*".path"))
+	local existingUnits=($(find "${ARKLONE_DIR}/systemd/units/"*".path"))
 
 	for existingUnit in ${existingUnits[@]}; do
 		local pathChanged=$(awk -F '=' '/PathChanged/ {print $2}' "${existingUnit}")
@@ -78,7 +78,7 @@ EOF
 # RUN
 #####
 # Remove old units
-OLD_UNITS=($(find "${ARKLONE_DIR}/systemd/arkloned-retroarch"*".auto.path" 2>/dev/null))
+OLD_UNITS=($(find "${ARKLONE_DIR}/systemd/units/arkloned-retroarch"*".auto.path" 2>/dev/null))
 
 if [ ! -z ${OLD_UNITS} ]; then
 	echo "Cleaning up old path units..."
@@ -122,7 +122,7 @@ for retroarch_dir in ${RETROARCHS[@]}; do
 					continue
 				fi
 
-				unit="${ARKLONE_DIR}/systemd/arkloned-${retroarch}-${savetype}s-${subdir##*/}.auto.path"
+				unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s-${subdir##*/}.auto.path"
 
 				printf "\nCreating new unit: ${unit}\n"
 
@@ -145,7 +145,7 @@ for retroarch_dir in ${RETROARCHS[@]}; do
 
 		# Make ${savetype_directory} path unit
 		if [ "${sort_savetypes_enable}" != "true" ]; then
-			unit="${ARKLONE_DIR}/systemd/arkloned-${retroarch}-${savetype}s.auto.path"
+			unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s.auto.path"
 
 			printf "\nCreating new unit: ${unit}\n"
 
@@ -157,7 +157,7 @@ for retroarch_dir in ${RETROARCHS[@]}; do
 			subdirs=$(find ${savetype_directory} -mindepth 1 -maxdepth 1 -type d)
 
 			for subdir in ${subdirs[@]}; do
-				unit="${ARKLONE_DIR}/systemd/arkloned-${retroarch}-${savetype}s-${subdir##*/}.auto.path"
+				unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s-${subdir##*/}.auto.path"
 
 				printf "\nCreating new unit: ${unit}\n"
 

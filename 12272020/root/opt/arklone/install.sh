@@ -16,21 +16,24 @@ if [ ! -d "${USER_CONFIG_DIR}/rclone" ]; then
 		&& sudo chown ark:ark "${USER_CONFIG_DIR}/rclone" \
 		&& sudo chmod 755 "${USER_CONFIG_DIR}/rclone"
 fi
-sudo ln -s "/roms/backup/rclone/rclone.conf" "${USER_CONFIG_DIR}/rclone/rclone.conf"
-sudo chmod 666 "/roms/backup/rclone/rclone.conf"
+
+if [ ! -f "/roms/backup/rclone/rclone.conf" ]; then
+	touch "/roms/backup/rclone/rclone.conf"
+fi
+sudo ln -v -s "/roms/backup/rclone/rclone.conf" "${USER_CONFIG_DIR}/rclone/rclone.conf"
 
 #########
 # arklone
 #########
 # Grant permissions to scripts
 sudo chmod -v a+r+x "${ARKLONE_DIR}/uninstall.sh"
-sudo chmod -v a+r+x "${ARKLONE_DIR}/generate-retroarch-units.sh"
-sudo chmod -v a+r+x "${ARKLONE_DIR}/arklone-saves.sh"
-sudo chmod -v a+r+x "${ARKLONE_DIR}/arklone-arkos.sh"
 sudo chmod -v a+r+x "${ARKLONE_DIR}/dialogs/settings.sh"
+sudo chmod -v a+r+x "${ARKLONE_DIR}/rclone/scripts/arklone-saves.sh"
+sudo chmod -v a+r+x "${ARKLONE_DIR}/rclone/scripts/arklone-arkos.sh"
+sudo chmod -v a+r+x "${ARKLONE_DIR}/systemd/scripts/generate-retroarch-units.sh"
 
 # Generate retroarch path units
-"${ARKLONE_DIR}/generate-retroarch-units.sh"
+"${ARKLONE_DIR}/systemd/scripts/generate-retroarch-units.sh"
 
 # Create arklone user config dir
 if [ ! -d "${USER_CONFIG_DIR}/arklone" ]; then
@@ -38,6 +41,3 @@ if [ ! -d "${USER_CONFIG_DIR}/arklone" ]; then
 		&& sudo chown ark:ark "${USER_CONFIG_DIR}/arklone" \
 		&& sudo chmod a+r+w "${USER_CONFIG_DIR}/arklone"
 fi
-
-# Grant permissino to ES launcher
-sudo chmod -v a+r+x "/opt/system/Cloud Settings.sh"

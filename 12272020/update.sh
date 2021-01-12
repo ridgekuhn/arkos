@@ -45,6 +45,9 @@ if [ ! -f "/home/ark/.config/.update${RIDGEK_DATE}" ]; then
 		sudo chown -R ark:ark /opt/joy2key \
 			&& sudo chmod a+x "/opt/joy2key/install.sh"
 		bash "/opt/joy2key/install.sh"
+
+		# Grant permissino to ES launcher
+		sudo chmod -v a+r+x "/opt/system/Cloud Settings.sh"
 	else
 		printf "\nThe update couldn't complete because the package did not download correctly.\nPlease retry the update again."
 		echo $c_brightness > /sys/devices/platform/backlight/backlight/backlight/brightness
