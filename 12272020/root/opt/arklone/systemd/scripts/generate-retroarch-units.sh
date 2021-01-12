@@ -89,7 +89,7 @@ if [ ! -z ${OLD_UNITS} ]; then
 		printf "\nRemoving old unit: ${OLD_UNIT##*/}...\n"
 
 		if [ ! -z $linked ]; then
-			sudo systemctl disable ${OLD_UNIT##*/}
+			sudo systemctl disable "${OLD_UNIT##*/}"
 		fi
 
 		sudo rm -v "${OLD_UNIT}"
@@ -110,12 +110,11 @@ for retroarch_dir in ${RETROARCHS[@]}; do
 		if [ "${savetypes_in_content_dir}" = "true" ]; then
 			subdirs=$(find ${RETROARCH_CONTENT_ROOT} -mindepth 1 -maxdepth 1 -type d)
 
-			# @TODO sort_${savetype}s_enable appears
-			#		to have no effect for this scenario.
-			#		if it does, then we will need to recurse one more directory level
-			#		and can probably combine functionality
-			#		with ${savetype_directory} subdir units below,
-			#		by redefining savetype_directory=${RETROARCH_CONTENT_ROOT}
+			# @TODO neither sort_${savetype}s_enable or
+			# 	sort_${savetype}s_by_content_enable
+			#		appear to have any effect in this scenario.
+			#		if this changes,
+			#		then we will need to recurse one more directory level, like below
 			for subdir in ${subdirs[@]}; do
 				# Skip non-RetroArch subdirs
 				if [ "${subdir##*/}" = "backup" ] || [ "${subdir##*/}" = "ports" ]; then
@@ -153,16 +152,25 @@ for retroarch_dir in ${RETROARCHS[@]}; do
 
 		# Generate ${savetype_directory} subdirectory path units
 		else
-			#Get all subdirectories in ${savetype_directory}
+			# Workaround for filenames with spaces
+			OIFS="$IFS"
+			IFS=$'\n'
+
+			# Get all subdirectories in ${savetype_directory}
 			subdirs=$(find ${savetype_directory} -mindepth 1 -maxdepth 1 -type d)
 
 			for subdir in ${subdirs[@]}; do
-				unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s-${subdir##*/}.auto.path"
+				# Workaround for filenames with spaces
+				escSubdir=$(systemd-escape "${subdir##*/}")
+				unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s-${escSubdir}.auto.path"
 
 				printf "\nCreating new unit: ${unit}\n"
 
 				makePathUnit "${unit}" "${subdir}" "${retroarch}/${savetype}s/${subdir##*/}" "retroarch-${savetype}"
 			done
+
+			# Reset workaround for filenames with spaces
+			IFS="$OIFS"
 		fi
 	done
 done
