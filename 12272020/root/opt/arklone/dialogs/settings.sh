@@ -206,16 +206,16 @@ function autoSyncSavesScreen() {
 
 		for unit in ${units[@]}; do
 			# Skip *.auto.path units
-			if [ ! -z `expr match "${unit}" '.*\(.auto.path\)'` ]; then
-				continue
-			fi
+			# if [ ! -z `expr match "${unit}" '.*\(.auto.path\)'` ]; then
+			# 	continue
+			# fi
 
 			sudo systemctl enable "${unit}" \
 				&& sudo systemctl start "${unit##*/}"
 		done
 
 		# Generate RetroArch units
-		"${ARKLONE_DIR}/systemd/scripts/generate-retroarch-units.sh"
+		# "${ARKLONE_DIR}/systemd/scripts/generate-retroarch-units.sh"
 
 	# Disable enabled units
 	else
