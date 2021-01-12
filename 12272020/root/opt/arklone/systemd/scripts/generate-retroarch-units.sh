@@ -117,7 +117,9 @@ for retroarch_dir in ${RETROARCHS[@]}; do
 			#		then we will need to recurse one more directory level, like below
 			for subdir in ${subdirs[@]}; do
 				# Skip non-RetroArch subdirs
-				if [ "${subdir##*/}" = "backup" ] || [ "${subdir##*/}" = "ports" ]; then
+				if [ "${subdir##*/}" = "backup" ] \
+					|| [ "${subdir##*/}" = "bios" ] \
+					|| [ "${subdir##*/}" = "ports" ]; then
 					continue
 				fi
 
