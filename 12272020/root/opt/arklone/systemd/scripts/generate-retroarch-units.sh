@@ -110,6 +110,14 @@ for retroarch_dir in ${RETROARCHS[@]}; do
 		if [ "${savetypes_in_content_dir}" = "true" ]; then
 			subdirs=$(find ${RETROARCH_CONTENT_ROOT} -mindepth 1 -maxdepth 1 -type d)
 
+			# Make RetroArch content root unit
+			unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s-${RETROARCH_CONTENT_ROOT##*/}.auto.path"
+
+			printf "\nCreating new unit: ${unit}\n"
+
+			makePathUnit "${unit}" "${RETROARCH_CONTENT_ROOT}" "${retroarch}/${RETROARCH_CONTENT_ROOT##*/}/${savetype}s" "retroarch-${savetype}"
+
+			# Make RetroArch content root subdirectory units
 			# @TODO neither sort_${savetype}s_enable or
 			# 	sort_${savetype}s_by_content_enable
 			#		appear to have any effect in this scenario.
@@ -127,7 +135,7 @@ for retroarch_dir in ${RETROARCHS[@]}; do
 
 				printf "\nCreating new unit: ${unit}\n"
 
-				makePathUnit "${unit}" "${subdir}" "${retroarch}/${savetype}s/${subdir##*/}" "retroarch-${savetype}"
+				makePathUnit "${unit}" "${subdir}" "${retroarch}/${RETROARCH_CONTENT_ROOT##*/}/${savetype}s/${subdir##*/}" "retroarch-${savetype}"
 			done
 
 			# Nothing else to do on this iteration,
@@ -144,16 +152,15 @@ for retroarch_dir in ${RETROARCHS[@]}; do
 			savetype_directory="/home/${USER}/${savetype_directory#*/}"
 		fi
 
-		# Make ${savetype_directory} path unit
-		if [ "${sort_savetypes_enable}" != "true" ]; then
-			unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s.auto.path"
+		# Make ${savetype_directory} root path unit
+		unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s.auto.path"
 
-			printf "\nCreating new unit: ${unit}\n"
+		printf "\nCreating new unit: ${unit}\n"
 
-			makePathUnit "${unit}" "${savetype_directory}" "${retroarch}/${savetype}s" "retroarch-${savetype}"
+		makePathUnit "${unit}" "${savetype_directory}" "${retroarch}/${savetype}s" "retroarch-${savetype}"
 
 		# Generate ${savetype_directory} subdirectory path units
-		else
+		if [ "${sort_savetypes_enable}" = "true" ]; then
 			# Workaround for filenames with spaces
 			OIFS="$IFS"
 			IFS=$'\n'
