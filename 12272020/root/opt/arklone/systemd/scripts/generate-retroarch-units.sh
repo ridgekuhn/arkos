@@ -39,13 +39,13 @@ function unitExists() {
 # @param $1 {string} Absolute path to the new unit file. Must end in .auto.path
 # @param $2 {string} The directory to watch for changes
 # @param $3 {string} The remote directory to sync rclone to
-# @param [$4] {string} The rclone filter in ${ARKLONE_DIR}/rclone/filters,
-# 		named "retroarch-${savetype}" (no extension)
+# @param [$4] {string} The rclone filter in ${ARKLONE_DIR}/rclone/filters (no extension)
 function makePathUnit() {
 	local newUnit="${1}"
 	local localDir="${2}"
 	local remoteDir="${3}"
 	local filter="${4}"
+
 	local instanceName=$(systemd-escape "${localDir}@${remoteDir}@${filter}")
 
 	# Skip if a unit already exists for this path
@@ -57,7 +57,7 @@ function makePathUnit() {
 	fi
 
 	# Generate new unit
-	echo "Generating new path unit: ${newUnit}..."
+	echo "Generating new path unit: ${newUnit}"
 	sudo cat <<EOF > "${newUnit}"
 [Path]
 PathChanged=${localDir}
@@ -72,6 +72,49 @@ EOF
 		sudo systemctl enable "${newUnit}" \
 			&& sudo systemctl start "${newUnit##*/}"
 	fi
+}
+
+# Recurse directory and make path units for subdirectories
+#
+# @param $1 {string} Absolute path to the directory to recurse
+# @param $2 {string} Remote directory path
+# @param $3 {string} The rclone filter in ${ARKLONE_DIR}/rclone/filters (no extension)
+# @param [$4] {string} Absolute path to list of directory names to ignore
+function makeSubdirPathUnits() {
+	local subdirs=$(find "${1}" -mindepth 1 -maxdepth 1 -type d)
+	local remoteDir="${2}"
+	local filter="${3}"
+	# @TODO move this to a separate file
+	local ignoreDirs=("backup" "bios" "ports")
+
+	# Workaround for subdirectory names with spaces
+	local OIFS="$IFS"
+	IFS=$'\n'
+
+	for subdir in ${subdirs[@]}; do
+		local unit="${ARKLONE_DIR}/systemd/units/arkloned-${remoteDir//\//-}-$(basename "${subdir//\ /_}").sub.auto.path"
+
+		# Skip non-RetroArch subdirs
+		if [ ! -z ${ignoreDirs} ]; then
+			local skipDir=false
+
+			for ignoreDir in ${ignoreDirs[@]}; do
+				if [ "${subdir##*/}" = "${ignoreDir}" ]; then
+					skipDir=true
+				fi
+			done
+
+			if [ "${skipDir}" = "true" ]; then
+				echo "${subdir} is in ignore list. Skipping..."
+				continue
+			fi
+		fi
+
+		makePathUnit "${unit}" "${subdir}" "${remoteDir}/${subdir##*/}" "${filter}"
+	done
+
+	# Reset workaround for directory names with spaces
+	IFS="$OIFS"
 }
 
 #####
@@ -100,6 +143,15 @@ fi
 for retroarch_dir in ${RETROARCHS[@]}; do
 	# Get retroarch or retroarch32
 	retroarch=${retroarch_dir##*/}
+
+	# Scenario 1:
+	# savefiles_in_content_dir = "true" && savestates_in_content_dir = "true"
+
+	# Scenario 2:
+	# savefiles_in_content_dir = "false" && savestates_in_content_dir = "false" && savefile_directory == savestate_directory
+
+	# Scenario 3:
+	# Something else
 	savetypes=("savefile" "savestate")
 
 	for savetype in ${savetypes[@]}; do
@@ -108,39 +160,26 @@ for retroarch_dir in ${RETROARCHS[@]}; do
 
 		# Make RetroArch content directory units
 		if [ "${savetypes_in_content_dir}" = "true" ]; then
-			subdirs=$(find ${RETROARCH_CONTENT_ROOT} -mindepth 1 -maxdepth 1 -type d)
-
 			# Make RetroArch content root unit
-			unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s-${RETROARCH_CONTENT_ROOT##*/}.auto.path"
+			unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-roms-${savetype}s.auto.path"
+			makePathUnit "${unit}" "${RETROARCH_CONTENT_ROOT}" "${retroarch}/roms/${savetype}s" "retroarch-${savetype}"
 
-			printf "\nCreating new unit: ${unit}\n"
-
-			makePathUnit "${unit}" "${RETROARCH_CONTENT_ROOT}" "${retroarch}/${RETROARCH_CONTENT_ROOT##*/}/${savetype}s" "retroarch-${savetype}"
-
-			# Make RetroArch content root subdirectory units
-			# @TODO neither sort_${savetype}s_enable or
-			# 	sort_${savetype}s_by_content_enable
+			# Make RetroArch content subdirectory units
+			# @TODO Neither `sort_${savetype}s_enable = "true"`
+			# 	or `sort_${savetype}s_by_content_enable = "true"`
 			#		appear to have any effect in this scenario.
-			#		if this changes,
-			#		then we will need to recurse one more directory level, like below
-			for subdir in ${subdirs[@]}; do
-				# Skip non-RetroArch subdirs
-				# @TODO Use a blocklist file
-				if [ "${subdir##*/}" = "backup" ] \
-					|| [ "${subdir##*/}" = "bios" ] \
-					|| [ "${subdir##*/}" = "ports" ]; then
-					continue
-				fi
+			#		(Expected behavior is to
+			#		store the saves in a subdirectory for each core
+			#		eg, ${RETROARCH_CONTENT_ROOT}/nes/Nestopia)
+			#		If this turns out to be incorrect,
+			#		then we will need to recurse one more directory level:
+			# systems=$(find "${RETROARCH_CONTENT_ROOT}" -mindepth 1 -maxdepth 1 -type d)
+			# for system in ${systems[@]}; do
+			# 	makeSubdirPathUnits "${system}" "${retroarch}" "retroarch-${savetype}"
+			# done
+			makeSubdirPathUnits "${RETROARCH_CONTENT_ROOT}" "${retroarch}/roms/${savetype}s" "retroarch-${savetype}"
 
-				unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s-${subdir##*/}.sub.auto.path"
-
-				printf "\nCreating new unit: ${unit}\n"
-
-				makePathUnit "${unit}" "${subdir}" "${retroarch}/${RETROARCH_CONTENT_ROOT##*/}/${savetype}s/${subdir##*/}" "retroarch-${savetype}"
-			done
-
-			# Nothing else to do on this iteration,
-			# go to next ${savetype}
+			# Nothing else to do on this iteration, go to next ${savetype}
 			continue
 		fi
 
@@ -155,32 +194,11 @@ for retroarch_dir in ${RETROARCHS[@]}; do
 
 		# Make ${savetype_directory} root path unit
 		unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s.auto.path"
-
-		printf "\nCreating new unit: ${unit}\n"
-
 		makePathUnit "${unit}" "${savetype_directory}" "${retroarch}/${savetype}s" "retroarch-${savetype}"
 
-		# Generate ${savetype_directory} subdirectory path units
+		# Make ${savetype_directory} subdirectory path units
 		if [ "${sort_savetypes_enable}" = "true" ]; then
-			# Workaround for filenames with spaces
-			OIFS="$IFS"
-			IFS=$'\n'
-
-			# Get all subdirectories in ${savetype_directory}
-			subdirs=$(find ${savetype_directory} -mindepth 1 -maxdepth 1 -type d)
-
-			for subdir in ${subdirs[@]}; do
-				# Workaround for filenames with spaces
-				escSubdir=$(systemd-escape "${subdir##*/}")
-				unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s-${escSubdir}.sub.auto.path"
-
-				printf "\nCreating new unit: ${unit}\n"
-
-				makePathUnit "${unit}" "${subdir}" "${retroarch}/${savetype}s/${subdir##*/}" "retroarch-${savetype}"
-			done
-
-			# Reset workaround for filenames with spaces
-			IFS="$OIFS"
+			makeSubdirPathUnits "${savetype_directory}" "${retroarch}/${savetype}s" "retroarch-${savetype}"
 		fi
 	done
 done
