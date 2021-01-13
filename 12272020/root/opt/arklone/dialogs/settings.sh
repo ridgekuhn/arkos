@@ -22,11 +22,11 @@ function printMenu() {
 	done
 }
 
-# Get instance names of all systemd path modules
+# Get instance names of all systemd path modules not ending in .sub.auto.path
 #
 # @returns {string} space-delimted array of unescaped instance names
-function getInstanceNames() {
-	local units=($(find "${ARKLONE_DIR}/systemd/units/"*".path"))
+function getRootInstanceNames() {
+	local units=($(find "/opt/arklone/systemd/units/"*".path" -print0 | xargs -0 -I {} bash -c 'unit={}; if [ ! -z "${unit##*sub.auto.path}" ]; then echo "${unit}"; fi'))
 
 	for (( i = 0; i < ${#units[@]}; i++ )); do
 		local escapedName=$(awk -F '@' '/Unit/ {split($2, arr, ".service"); print arr[1]}' "${units[i]}")
@@ -81,7 +81,6 @@ function alreadyRunning() {
 # PREFLIGHT
 ###########
 TITLE="arklone cloud sync utility"
-INSTANCES=$(getInstanceNames)
 
 #######
 # VIEWS
@@ -147,7 +146,8 @@ function setCloudScreen() {
 function manualSyncSavesScreen() {
 	local script="arklone-saves.sh"
 	local log_file=$(awk '/^LOG_FILE/ { split($1, a, "="); gsub("\"", "", a[2]); print a[2]}' "${ARKLONE_DIR}/rclone/scripts/${script}")
-	local localdirs=$(for instance in ${INSTANCES[@]}; do filter="$(echo ${instance##*@} | awk -F '-' '/retroarch/ {str="("$2")"; print str}')"; printf "${instance%@*@*}${filter} "; done)
+	local instances=($(getRootInstanceNames))
+	local localdirs=$(for instance in ${instances[@]}; do filter="$(echo ${instance##*@} | awk -F '-' '/retroarch/ {str="("$2")"; print str}')"; printf "${instance%@*@*}${filter} "; done)
 
 	alreadyRunning "${script}" "${log_file}"
 
@@ -164,7 +164,6 @@ function manualSyncSavesScreen() {
 		)
 
 		if [ ! -z $selection ]; then
-			local instances=(${INSTANCES})
 			local instance=${instances[$selection]}
 			IFS="@" read -r localdir remotedir filter <<< "${instance}"
 

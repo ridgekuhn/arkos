@@ -9,17 +9,24 @@ source "/opt/arklone/config.sh"
 ##############
 # DEPENDENCIES
 ##############
+# Create user-accessible rclone dir on EASYROMS
+if [ ! -d "/roms/backup/rclone" ]; then
+	sudo mkdir "/roms/backup/rclone"
+fi
+
+# Create user-accessible rclone.conf on EASYROMS
+if [ ! -f "/roms/backup/rclone/rclone.conf" ]; then
+	sudo touch "/roms/backup/rclone/rclone.conf"
+fi
+
 # Create rclone user config dir
-# rclone.conf is stored on EASYROMS partition, link to ~/.config/rclone so rclone can find it
 if [ ! -d "${USER_CONFIG_DIR}/rclone" ]; then
 	sudo mkdir "${USER_CONFIG_DIR}/rclone" \
 		&& sudo chown ark:ark "${USER_CONFIG_DIR}/rclone" \
 		&& sudo chmod 755 "${USER_CONFIG_DIR}/rclone"
 fi
 
-if [ ! -f "/roms/backup/rclone/rclone.conf" ]; then
-	touch "/roms/backup/rclone/rclone.conf"
-fi
+# Link user-accessible rclone.conf so rclone can find it
 sudo ln -v -s "/roms/backup/rclone/rclone.conf" "${USER_CONFIG_DIR}/rclone/rclone.conf"
 
 #########

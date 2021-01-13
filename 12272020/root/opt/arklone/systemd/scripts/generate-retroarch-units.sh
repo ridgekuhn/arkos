@@ -125,13 +125,14 @@ for retroarch_dir in ${RETROARCHS[@]}; do
 			#		then we will need to recurse one more directory level, like below
 			for subdir in ${subdirs[@]}; do
 				# Skip non-RetroArch subdirs
+				# @TODO Use a blocklist file
 				if [ "${subdir##*/}" = "backup" ] \
 					|| [ "${subdir##*/}" = "bios" ] \
 					|| [ "${subdir##*/}" = "ports" ]; then
 					continue
 				fi
 
-				unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s-${subdir##*/}.auto.path"
+				unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s-${subdir##*/}.sub.auto.path"
 
 				printf "\nCreating new unit: ${unit}\n"
 
@@ -171,7 +172,7 @@ for retroarch_dir in ${RETROARCHS[@]}; do
 			for subdir in ${subdirs[@]}; do
 				# Workaround for filenames with spaces
 				escSubdir=$(systemd-escape "${subdir##*/}")
-				unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s-${escSubdir}.auto.path"
+				unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s-${escSubdir}.sub.auto.path"
 
 				printf "\nCreating new unit: ${unit}\n"
 
