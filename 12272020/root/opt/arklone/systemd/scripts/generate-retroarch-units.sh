@@ -84,8 +84,9 @@ function makeSubdirPathUnits() {
 	local subdirs=$(find "${1}" -mindepth 1 -maxdepth 1 -type d)
 	local remoteDir="${2}"
 	local filter="${3}"
-	# @TODO move this to a separate file
-	local ignoreDirs=("backup" "bios" "ports")
+	local ignoreList="${4}"
+
+	local ignoreDirs=($(cat "${ignoreList}" 2>/dev/null))
 
 	# Workaround for subdirectory names with spaces
 	local OIFS="$IFS"
@@ -95,17 +96,17 @@ function makeSubdirPathUnits() {
 		local unit="${ARKLONE_DIR}/systemd/units/arkloned-${remoteDir//\//-}-$(basename "${subdir//\ /_}").sub.auto.path"
 
 		# Skip non-RetroArch subdirs
-		if [ ! -z ${ignoreDirs} ]; then
+		if [ ! -z "${ignoreDirs}" ]; then
 			local skipDir=false
 
 			for ignoreDir in ${ignoreDirs[@]}; do
-				if [ "${subdir##*/}" = "${ignoreDir}" ]; then
+				if [ -z ${subdir##*/$ignoreDir} ]; then
 					skipDir=true
 				fi
 			done
 
 			if [ "${skipDir}" = "true" ]; then
-				echo "${subdir} is in ignore list. Skipping..."
+				echo "${subdir} is in ignore list: ${ignoreList}. Skipping..."
 				continue
 			fi
 		fi
@@ -120,9 +121,10 @@ function makeSubdirPathUnits() {
 #####
 # RUN
 #####
-# Remove old units
 OLD_UNITS=($(find "${ARKLONE_DIR}/systemd/units/arkloned-retroarch"*".auto.path" 2>/dev/null))
+IGNORE_DIRS="${ARKLONE_DIR}/systemd/scripts/retroarch-roms.ignore"
 
+# Remove old units
 if [ ! -z ${OLD_UNITS} ]; then
 	echo "Cleaning up old path units..."
 
@@ -177,7 +179,7 @@ for retroarch_dir in ${RETROARCHS[@]}; do
 			# for system in ${systems[@]}; do
 			# 	makeSubdirPathUnits "${system}" "${retroarch}" "retroarch-${savetype}"
 			# done
-			makeSubdirPathUnits "${RETROARCH_CONTENT_ROOT}" "${retroarch}/roms/${savetype}s" "retroarch-${savetype}"
+			makeSubdirPathUnits "${RETROARCH_CONTENT_ROOT}" "${retroarch}/roms/${savetype}s" "retroarch-${savetype}" "${IGNORE_DIRS}"
 
 			# Nothing else to do on this iteration, go to next ${savetype}
 			continue
@@ -198,7 +200,7 @@ for retroarch_dir in ${RETROARCHS[@]}; do
 
 		# Make ${savetype_directory} subdirectory path units
 		if [ "${sort_savetypes_enable}" = "true" ]; then
-			makeSubdirPathUnits "${savetype_directory}" "${retroarch}/${savetype}s" "retroarch-${savetype}"
+			makeSubdirPathUnits "${savetype_directory}" "${retroarch}/${savetype}s" "retroarch-${savetype}" "${IGNORE_DIRS}"
 		fi
 	done
 done
