@@ -26,8 +26,13 @@ function unitExists() {
 		local escInstanceName=$(awk -F "=" '/Unit/ {split($2, arr, "arkloned@"); print arr[2]}' "${existingUnit}")
 		local existingFilter=$(systemd-escape -u -- "${escInstanceName}" | awk -F '@' '{split($3, arr, ".service"); print arr[1]}')
 
-		if [ "${pathChanged}" = "${localDir}" ] && [ "${existingFilter}" = "${filter}" ]; then
-			return 1
+		if [ "${pathChanged}" = "${localDir}" ]; then
+			if [ "${existingFilter}" = "${filter}" ] \
+				|| [ ! -z ${existingFilter} ] \
+				&& [ -z ${filter##$existingFilter*} ]
+			then
+				return 1
+			fi
 		fi
 	done
 }
@@ -52,7 +57,7 @@ function makePathUnit() {
 	unitExists "${localDir}" "${filter}"
 
 	if [ $? != 0 ]; then
-		echo "A path unit for ${filter} in ${localDir} already exists. Skipping..."
+		echo "A path unit for ${localDir} using ${filter}.filter already exists. Skipping..."
 		return
 	fi
 
@@ -77,7 +82,7 @@ EOF
 # Recurse directory and make path units for subdirectories
 #
 # @param $1 {string} Absolute path to the directory to recurse
-# @param $2 {string} Remote directory path
+# @param $2 {string} Remote directory root path
 # @param $3 {string} The rclone filter in ${ARKLONE_DIR}/rclone/filters (no extension)
 # @param [$4] {string} Absolute path to list of directory names to ignore
 function makeSubdirPathUnits() {
@@ -145,62 +150,118 @@ fi
 for retroarch_dir in ${RETROARCHS[@]}; do
 	# Get retroarch or retroarch32
 	retroarch=${retroarch_dir##*/}
-
-	# Scenario 1:
-	# savefiles_in_content_dir = "true" && savestates_in_content_dir = "true"
-
-	# Scenario 2:
-	# savefiles_in_content_dir = "false" && savestates_in_content_dir = "false" && savefile_directory == savestate_directory
-
-	# Scenario 3:
-	# Something else
 	savetypes=("savefile" "savestate")
 
+	savefiles_in_content_dir=$(awk '/savefiles_in_content_dir/ {gsub("\"","",$3); print $3}' "${retroarch_dir}/retroarch.cfg")
+	savestates_in_content_dir=$(awk '/savestates_in_content_dir/ {gsub("\"","",$3); print $3}' "${retroarch_dir}/retroarch.cfg")
+
+	savefile_directory=$(awk -v homeDir="/home/${USER}" '/savefile_directory/ {gsub("\"","",$3); gsub("~",homeDir,$3); print $3}' "${retroarch_dir}/retroarch.cfg")
+	savestate_directory=$(awk -v homeDir="/home/${USER}" '/savestate_directory/ {gsub("\"","",$3); gsub("~",homeDir,$3); print $3}' "${retroarch_dir}/retroarch.cfg")
+
+	sort_savefiles_enable=$(awk '/sort_savefiles_enable/ {gsub("\"","",$3); print $3}' "${retroarch_dir}/retroarch.cfg")
+	sort_savestates_enable=$(awk '/sort_savestates_enable/ {gsub("\"","",$3); print $3}' "${retroarch_dir}/retroarch.cfg")
+
+	#####################################################################
+	# Scenario 1:
+	# savefiles and savestates are both stored in the content directories
+	#####################################################################
+	if [ "$savefiles_in_content_dir" = "true" ] \
+		&& [ "$savestates_in_content_dir" = "true" ]
+	then
+		# Make RetroArch content root unit
+		unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${RETROARCH_CONTENT_ROOT##*/}.auto.path"
+		makePathUnit "${unit}" "${RETROARCH_CONTENT_ROOT}" "${retroarch}/${RETROARCH_CONTENT_ROOT##*/}" "retroarch"
+
+		# Make RetroArch content subdirectory units
+		# @TODO `sort_${savetype}s_by_content_enable = "true"`
+		#		appears to have no effect. (Expected behavior is to
+		#		store the saves in a subdirectory for each core
+		#		eg, ${RETROARCH_CONTENT_ROOT}/nes/Nestopia)
+		#
+		#		If this turns out to be incorrect, then we will need to
+		#		compare sort_savefiles_by_content_enable
+		#		and sort_savestates_by_content_enable
+		#		like in Scenario 2 below, and recurse an additional level
+		#		of subdirectories to target the libretro core folders
+		makeSubdirPathUnits "${RETROARCH_CONTENT_ROOT}" "${retroarch}/${RETROARCH_CONTENT_ROOT##*/}" "retroarch" "${IGNORE_DIRS}"
+
+		# Go to next ${retroarch_dir}
+		continue
+	fi
+
+	#########################################################################
+	# Scenario 2:
+	# savefiles and savestates are in the same directory,
+	# but outside the content directory
+	#########################################################################
+	if [ "$savefiles_in_content_dir" != "true" ] \
+		&& [ "$savestates_in_content_dir" != "true" ] \
+		&& [ "${savefile_directory}" = "${savestate_directory}" ]
+	then
+		# Make RetroArch save root unit
+		unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savefile_directory##*/}.auto.path"
+		makePathUnit "${unit}" "${savefile_directory}" "${retroarch}/${savefile_directory##*/}" "retroarch"
+
+		########################################
+		# Scenario 2A:
+		# savefiles and savestates are sorted
+		# and saved into the same subdirectories
+		########################################
+		if [ "${sort_savefiles_enable}" = "true" ] \
+			&& [ "${sort_savestates_enable}" = "true" ]
+		then
+			makeSubdirPathUnits "${savefile_directory}" "${retroarch}/${savefile_directory##*/}" "retroarch"
+
+		#################################################
+		# Scenario 2B
+		# only one of savefiles and savestates are sorted
+		#################################################
+		elif [ "${sort_savefiles_enable}" = "true" ] \
+			|| [ "${sort_savestates_enable}" = "true" ]
+		then
+			for savetype in ${savetypes[@]}; do
+				sort_savetypes_enable="sort_${savetype}s_enable"
+
+				if [ "${!sort_savetypes_enable}" = "true" ]; then
+					makeSubdirPathUnits "${savefile_directory}" "${retroarch}/${savefile_directory##*/}" "retroarch-${savetype}"
+				fi
+			done
+		fi
+
+		# Go to next ${retroarch_dir}
+		continue
+	fi
+
+	##########################################################
+	# Scenario 3:
+	# Savefiles and savestates are NOT in the same directories
+	##########################################################
 	for savetype in ${savetypes[@]}; do
 		# Get settings from ${retroarch}/retroarch.cfg
-		savetypes_in_content_dir=$(awk -v savetypes_in_content_dir="${savetype}s_in_content_dir" '$0~savetypes_in_content_dir { gsub("\"","",$3); print $3}' "${retroarch_dir}/retroarch.cfg")
+		savetypes_in_content_dir="${savetype}s_in_content_dir"
+		savetype_directory="${savetype}_directory"
+		sort_savetypes_enable="sort_${savetype}s_enable"
 
 		# Make RetroArch content directory units
-		if [ "${savetypes_in_content_dir}" = "true" ]; then
+		if [ "${!savetypes_in_content_dir}" = "true" ]; then
 			# Make RetroArch content root unit
-			unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-roms-${savetype}s.auto.path"
-			makePathUnit "${unit}" "${RETROARCH_CONTENT_ROOT}" "${retroarch}/roms/${savetype}s" "retroarch-${savetype}"
+			unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${RETROARCH_CONTENT_ROOT##*/}-${savetype}s.auto.path"
+			makePathUnit "${unit}" "${RETROARCH_CONTENT_ROOT}" "${retroarch}/${RETROARCH_CONTENT_ROOT##*/}" "retroarch-${savetype}"
 
 			# Make RetroArch content subdirectory units
-			# @TODO Neither `sort_${savetype}s_enable = "true"`
-			# 	or `sort_${savetype}s_by_content_enable = "true"`
-			#		appear to have any effect in this scenario.
-			#		(Expected behavior is to
-			#		store the saves in a subdirectory for each core
-			#		eg, ${RETROARCH_CONTENT_ROOT}/nes/Nestopia)
-			#		If this turns out to be incorrect,
-			#		then we will need to recurse one more directory level:
-			# systems=$(find "${RETROARCH_CONTENT_ROOT}" -mindepth 1 -maxdepth 1 -type d)
-			# for system in ${systems[@]}; do
-			# 	makeSubdirPathUnits "${system}" "${retroarch}" "retroarch-${savetype}"
-			# done
-			makeSubdirPathUnits "${RETROARCH_CONTENT_ROOT}" "${retroarch}/roms/${savetype}s" "retroarch-${savetype}" "${IGNORE_DIRS}"
+			# @TODO See note in scenario 1 about
+			#		sort_${savetype}s_by_content_enable
+			makeSubdirPathUnits "${RETROARCH_CONTENT_ROOT}" "${retroarch}/${RETROARCH_CONTENT_ROOT##*/}" "retroarch-${savetype}" "${IGNORE_DIRS}"
 
-			# Nothing else to do on this iteration, go to next ${savetype}
-			continue
-		fi
+		# Make ${savetype_directory} units
+		else
+			# Make ${savetype_directory} root path unit
+			unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s.auto.path"
+			makePathUnit "${unit}" "${!savetype_directory}" "${retroarch}/${savetype}s" "retroarch-${savetype}"
 
-		# Get settings from ${retroarch}/retroarch.cfg
-		savetype_directory=$(awk -v savetype_directory="${savetype}_directory" '$0~savetype_directory { gsub("\"","",$3); print $3}' "${retroarch_dir}/retroarch.cfg")
-		sort_savetypes_enable=$(awk -v sort_savetypes_enable="sort_${savetype}s_enable" '$0~sort_savetypes_enable { gsub("\"","",$3); print $3}' "${retroarch_dir}/retroarch.cfg")
-
-		# Convert home path shortcut
-		if [ "${savetype_directory%%/*}" = "~" ]; then
-			savetype_directory="/home/${USER}/${savetype_directory#*/}"
-		fi
-
-		# Make ${savetype_directory} root path unit
-		unit="${ARKLONE_DIR}/systemd/units/arkloned-${retroarch}-${savetype}s.auto.path"
-		makePathUnit "${unit}" "${savetype_directory}" "${retroarch}/${savetype}s" "retroarch-${savetype}"
-
-		# Make ${savetype_directory} subdirectory path units
-		if [ "${sort_savetypes_enable}" = "true" ]; then
-			makeSubdirPathUnits "${savetype_directory}" "${retroarch}/${savetype}s" "retroarch-${savetype}" "${IGNORE_DIRS}"
+			if [ "${!sort_savetypes_enable}" = "true" ]; then
+				makeSubdirPathUnits "${!savetype_directory}" "${retroarch}/${savetype}s" "retroarch-${savetype}"
+			fi
 		fi
 	done
 done
