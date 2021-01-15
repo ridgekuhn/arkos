@@ -39,15 +39,22 @@ if [ ! -f "/home/ark/.config/.update${RIDGEK_DATE}" ]; then
 		# Install arklone
 		sudo chown -R ark:ark /opt/arklone \
 			&& sudo chmod a+x "/opt/arklone/install.sh"
-		bash "/opt/arklone/install.sh"
+		"/opt/arklone/install.sh"
 
 		# Set up joy2key
 		sudo chown -R ark:ark /opt/joy2key \
 			&& sudo chmod a+x "/opt/joy2key/install.sh"
-		bash "/opt/joy2key/install.sh"
+		"/opt/joy2key/install.sh"
 
-		# Grant permissino to ES launcher
+		# Grant permissino to ES arklone launcher
 		sudo chmod -v a+r+x "/opt/system/Cloud Settings.sh"
+
+		# Modify es_systems.cfg
+		sudo cp /etc/emulationstation/es_systems.cfg /etc/emulationstation/es_systems.cfg.update${RIDGEK_DATE}.bak
+
+		oldESstring='<command>sudo chmod 666 /dev/tty1; %ROM% > /dev/tty1; printf "\\033c" >> /dev/tty1</command>'
+		newESstring='<command>%ROM% \&lt;/dev/tty \&gt;/dev/tty 2\&gt;/dev/tty</command>'
+		sudo sed -i "s|${oldESstring}|${newESstring}|" /etc/emulationstation/es_systems.cfg
 	else
 		printf "\nThe update couldn't complete because the package did not download correctly.\nPlease retry the update again."
 		echo $c_brightness > /sys/devices/platform/backlight/backlight/backlight/brightness

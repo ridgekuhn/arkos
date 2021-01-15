@@ -1,0 +1,17 @@
+[Unit]
+Description=ODROID-GO2 EmulationStation
+After=firstboot.service
+
+[Service]
+Type=simple
+User=ark
+WorkingDirectory=/home/ark
+StandardInput=tty
+StandardOutput=journal+console
+StandardError=journal+console
+TTYPath=/dev/tty1
+ExecStart=/usr/bin/emulationstation/emulationstation.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
