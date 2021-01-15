@@ -77,6 +77,76 @@ function alreadyRunning() {
 	fi
 }
 
+#############
+# CONTROLLERS
+#############
+# Cloud service selection
+#
+# Saves selection to ${ARKLONE_DIR}/${REMOTE_CONF}
+function setCloud() {
+	local selection="${1}"
+
+	local remotes=(${REMOTES})
+
+	# Save selection to conf file
+	echo ${remotes[$selection]} > $REMOTE_CONF
+
+	# Reset string for current remote (for printing in homeScreen)
+	REMOTE_CURRENT=$(awk '{print $1}' "${REMOTE_CONF}")
+}
+
+# Enable/Disable auto savefile/savestate path units
+function autoSyncSaves() {
+	# Enable if no units are linked to systemd
+	if [ -z "${AUTOSYNC}" ]; then
+		local units=($(find "${ARKLONE_DIR}/systemd/units/"*".path"))
+
+		sudo systemctl link "${ARKLONE_DIR}/systemd/units/arkloned@.service"
+
+		for unit in ${units[@]}; do
+			# Skip *.auto.path units
+			# if [ ! -z `expr match "${unit}" '.*\(.auto.path\)'` ]; then
+			# 	continue
+			# fi
+
+			sudo systemctl enable "${unit}" \
+				&& sudo systemctl start "${unit##*/}"
+		done
+
+		# Generate RetroArch units
+		# "${ARKLONE_DIR}/systemd/scripts/generate-retroarch-units.sh"
+
+	# Disable enabled units
+	else
+		sudo systemctl disable "arkloned@.service"
+
+		for unit in ${AUTOSYNC[@]}; do
+			sudo systemctl disable "${unit}"
+		done
+	fi
+
+	# Reset able string
+	AUTOSYNC=($(systemctl list-unit-files | awk '/arkloned/ && /enabled/ {print $1}'))
+}
+
+# Manual backup ArkOS settings
+function manualBackupArkOS() {
+	local keep="${1}"
+
+	"${ARKLONE_DIR}/rclone/scripts/${script}"
+
+	if [ $? = 0 ]; then
+		# Delete ArkOS settings backup file
+		if [ $keep != 0 ]; then
+			sudo rm -v /roms/backup/arkosbackup.tar.gz
+		fi
+
+		return 0
+	else
+		return $?
+	fi
+}
+
 ###########
 # PREFLIGHT
 ###########
@@ -117,8 +187,6 @@ function homeScreen() {
 }
 
 # Cloud service selection dialog
-#
-# Saves selection to $ARKLONE_DIR/$REMOTE_CONF
 function setCloudScreen() {
 	local selection=$(whiptail \
 		--title "${TITLE}" \
@@ -130,13 +198,7 @@ function setCloudScreen() {
 	)
 
 	if [ ! -z $selection ]; then
-		local remotes=(${REMOTES})
-
-		# Save selection to conf file
-		echo ${remotes[$selection]} > $REMOTE_CONF
-
-		# Reset string for current remote (for printing in homeScreen)
-		REMOTE_CURRENT=$(awk "{print $1}" "${REMOTE_CONF}")
+		setCloud "${selection}"
 	fi
 
 	homeScreen
@@ -197,36 +259,7 @@ function autoSyncSavesScreen() {
 			"Please wait while we configure your settings..." \
 			16 56 8
 
-	# Enable if no units are linked to systemd
-	if [ -z "${AUTOSYNC}" ]; then
-		local units=($(find "${ARKLONE_DIR}/systemd/units/"*".path"))
-
-		sudo systemctl link "${ARKLONE_DIR}/systemd/units/arkloned@.service"
-
-		for unit in ${units[@]}; do
-			# Skip *.auto.path units
-			# if [ ! -z `expr match "${unit}" '.*\(.auto.path\)'` ]; then
-			# 	continue
-			# fi
-
-			sudo systemctl enable "${unit}" \
-				&& sudo systemctl start "${unit##*/}"
-		done
-
-		# Generate RetroArch units
-		# "${ARKLONE_DIR}/systemd/scripts/generate-retroarch-units.sh"
-
-	# Disable enabled units
-	else
-		sudo systemctl disable "arkloned@.service"
-
-		for unit in ${AUTOSYNC[@]}; do
-			sudo systemctl disable "${unit}"
-		done
-	fi
-
-	# Reset able string
-	AUTOSYNC=($(systemctl list-unit-files | awk '/arkloned/ && /enabled/ {print $1}'))
+	autoSyncSaves
 
 	homeScreen
 }
@@ -247,15 +280,17 @@ function manualBackupArkOSScreen() {
 				"This will create a backup of your settings at /roms/backup/arkosbackup.tar.gz. Do you want to keep this file after it is uploaded to ${REMOTE_CURRENT}?" \
 				16 56
 
-		keep=$?
+		local keep=$?
 
-		"${ARKLONE_DIR}/rclone/scripts/${script}"
+		whiptail \
+			--title "${TITLE}" \
+			--infobox \
+				"Please wait while we back up your settings..." \
+				16 56 8
+
+		manualBackupArkOS "${keep}"
 
 		if [ $? = 0 ]; then
-			if [ $keep != 0 ]; then
-				sudo rm -v /roms/backup/arkosbackup.tar.gz
-			fi
-
 			whiptail \
 				--title "${TITLE}" \
 				--msgbox \
@@ -281,7 +316,7 @@ function regenRAunitsScreen() {
 			"Please wait while we configure your settings..." \
 			16 56 8
 
-	"${ARKLONE_DIR}/generate-retroarch-units.sh"
+	"${ARKLONE_DIR}/systemd/scripts/generate-retroarch-units.sh"
 
 	homeScreen
 }
