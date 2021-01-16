@@ -25,10 +25,7 @@ then
 fi
 
 # Begin logging
-if touch "${LOG_FILE}" \
-	&& sudo chown ark:ark "${LOG_FILE}" \
-	&& sudo chmod a+r+w "${LOG_FILE}"
-then
+if touch "${LOG_FILE}"; then
 	exec &> >(tee -a "${LOG_FILE}")
 else
 	echo "Could not open log file. Exiting..."
