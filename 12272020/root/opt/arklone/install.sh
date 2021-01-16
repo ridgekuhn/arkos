@@ -9,6 +9,11 @@ source "/opt/arklone/config.sh"
 ##############
 # DEPENDENCIES
 ##############
+# Install rclone
+if ! rclone --version &> /dev/null; then
+	sudo apt update && sudo apt install rclone -y || (echo "Could not install required dependencies" && exit 1)
+fi
+
 # Create user-accessible rclone dir on EASYROMS
 if [ ! -d "/roms/backup/rclone" ]; then
 	sudo mkdir "/roms/backup/rclone"

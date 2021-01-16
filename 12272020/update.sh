@@ -19,16 +19,6 @@ if [ ! -f "/home/ark/.config/.update${RIDGEK_DATE}" ]; then
 
 	printf "\nInstalling cloud sync services\n"
 
-	# Install rclone
-	if ! rclone --version &> /dev/null; then
-		sudo apt update && sudo apt install rclone -y || (echo "Could not install required dependencies" && exit 1)
-	fi
-
-	# Install pyudev
-	if ! python3 -c 'help("modules")' | grep pyudev &> /dev/null; then
-		sudo apt install python3-pyudev
-	fi
-
 	# Install update
 	sudo wget ${RIDGEK_URL}/arkosupdate${RIDGEK_DATE}.zip -O /home/ark/arkosupdate${RIDGEK_DATE}.zip
 	if [ -f "/home/ark/arkosupdate${RIDGEK_DATE}.zip" ]; then
