@@ -1,21 +1,21 @@
 #!/bin/bash
 # ArkOS Update Cloud Backup Update
 # By ridgek
-RIDGEK_DATE="12272020"
+RIDGEK_DATE="20210118"
+RIDGEK_LOCK="/home/ark/.config/.arklone${RIDGEK_DATE}"
 # @todo Use production URL
 # RIDGEK_URL="https://raw.githubusercontent.com/christianhaitian/arkos/main/${RIDGEK_DATE}"
 RIDGEK_URL="https://raw.githubusercontent.com/ridgekuhn/arkos/cloudbackups/${RIDGEK_DATE}"
 # @todo Delete this if this script gets appended to Update-RG351P.sh
-LOG_FILE="/home/ark/update${RIDGEK_DATE}.log"
-c_brightness="$(cat /sys/devices/platform/backlight/backlight/backlight/brightness)"
+RIDGEK_LOG="/home/ark/arklone${RIDGEK_DATE}.log"
 
-if [ ! -f "/home/ark/.config/.update${RIDGEK_DATE}" ]; then
+if [ ! -f "${RIDGEK_LOCK}" ]; then
 	# Begin logging
-	if [ ! -f "${LOG_FILE}" ]; then
-		touch "${LOG_FILE}"
+	if [ ! -f "${RIDGEK_LOG}" ]; then
+		touch "${RIDGEK_LOG}"
 	fi
 
-	exec &> >(tee -a "${LOG_FILE}")
+	exec &> >(tee -a "${RIDGEK_LOG}")
 
 	printf "\nInstalling cloud sync services\n"
 
@@ -28,37 +28,29 @@ if [ ! -f "/home/ark/.config/.update${RIDGEK_DATE}" ]; then
 
 		# Install arklone
 		sudo chown -R ark:ark /opt/arklone \
-			&& sudo chmod a+x "/opt/arklone/install.sh"
+			&& sudo chmod a+x "/opt/arklone/install.sh" \
+			&& sudo chmod a+x "/opt/arklone/uninstall.sh"
 		"/opt/arklone/install.sh"
 
 		# Set up joy2key
 		sudo chown -R ark:ark /opt/joy2key \
-			&& sudo chmod a+x "/opt/joy2key/install.sh"
+			&& sudo chmod a+x "/opt/joy2key/install.sh" \
+			&& sudo chmod a+x "/opt/joy2key/uninstall.sh"
 		"/opt/joy2key/install.sh"
 
 		# Grant permissino to ES arklone launcher
 		sudo chmod -v a+r+x "/opt/system/Cloud Settings.sh"
 
 		# Modify es_systems.cfg
-		sudo cp /etc/emulationstation/es_systems.cfg /etc/emulationstation/es_systems.cfg.update${RIDGEK_DATE}.bak
+		sudo cp /etc/emulationstation/es_systems.cfg /etc/emulationstation/es_systems.cfg.arklone${RIDGEK_DATE}.bak
 
 		oldESstring='<command>sudo chmod 666 /dev/tty1; %ROM% > /dev/tty1; printf "\\033c" >> /dev/tty1</command>'
 		newESstring='<command>%ROM% \&lt;/dev/tty \&gt;/dev/tty 2\&gt;/dev/tty</command>'
 		sudo sed -i "s|${oldESstring}|${newESstring}|" /etc/emulationstation/es_systems.cfg
+
+		touch "${RIDGEK_LOCK}"
 	else
 		printf "\nThe update couldn't complete because the package did not download correctly.\nPlease retry the update again."
-		echo $c_brightness > /sys/devices/platform/backlight/backlight/backlight/brightness
 		exit 1
 	fi
-
-	if [ -f "/home/ark/.config/.update${RIDGEK_DATE}" ]; then
-	printf "\nUpdate boot text to reflect current version of ArkOS\n"
-		sudo sed -i "/title\=/c\title\=ArkOS 1.5 ($UPDATE_DATE)" /usr/share/plymouth/themes/text.plymouth
-	else
-		printf "\nThe update couldn't complete because there was a problem with the package.\nPlease retry the update again."
-		echo $c_brightness > /sys/devices/platform/backlight/backlight/backlight/brightness
-		exit 1
-	fi
-
-	touch "/home/ark/.config/.update${RIDGEK_DATE}"
 fi
