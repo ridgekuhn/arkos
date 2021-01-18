@@ -4,8 +4,8 @@
 RIDGEK_DATE="20210118"
 RIDGEK_LOCK="/home/ark/.config/.arklone${RIDGEK_DATE}"
 # @todo Use production URL
-# RIDGEK_URL="https://raw.githubusercontent.com/christianhaitian/arkos/main/${RIDGEK_DATE}"
-RIDGEK_URL="https://raw.githubusercontent.com/ridgekuhn/arkos/cloudbackups/${RIDGEK_DATE}"
+# RIDGEK_URL="https://raw.githubusercontent.com/christianhaitian/arkos/main/arklone${RIDGEK_DATE}"
+RIDGEK_URL="https://raw.githubusercontent.com/ridgekuhn/arkos/cloudbackups/arklone${RIDGEK_DATE}"
 # @todo Delete this if this script gets appended to Update-RG351P.sh
 RIDGEK_LOG="/home/ark/arklone${RIDGEK_DATE}.log"
 
