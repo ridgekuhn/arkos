@@ -1,5 +1,5 @@
 [Path]
-PathChanged=/home/ark
+PathChanged=/home/ark/QUICKSAVE.SAV
 Unit=arkloned@-home-ark\x40sdlpop\x40sdlpop.service
 
 [Install]
