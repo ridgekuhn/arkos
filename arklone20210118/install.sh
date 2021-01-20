@@ -48,6 +48,12 @@ if [ ! -f "${RIDGEK_LOCK}" ]; then
 		newESstring='<command>%ROM% \&lt;/dev/tty \&gt;/dev/tty 2\&gt;/dev/tty</command>'
 		sudo sed -i "s|${oldESstring}|${newESstring}|" /etc/emulationstation/es_systems.cfg
 
+		#Modify retroarch.cfg
+		oldRAstring='cache_directory = ""'
+		newRAstring='cache_directory = "/tmp"'
+		sudo sed -i "s|${oldRAstring}|${newRAstring}|" /home/ark/.config/retroarch/retroarch.cfg
+		sudo sed -i "s|${oldRAstring}|${newRAstring}|" /home/ark/.config/retroarch32/retroarch.cfg
+
 		touch "${RIDGEK_LOCK}"
 	else
 		printf "\nThe update couldn't complete because the package did not download correctly.\nPlease retry the update again."
