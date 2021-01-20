@@ -27,15 +27,15 @@ if [ ! -f "${RIDGEK_LOCK}" ]; then
 		sudo rm -v /home/ark/arkosupdate${RIDGEK_DATE}.zip
 
 		# Install arklone
-		sudo chown -R ark:ark /opt/arklone \
-			&& sudo chmod a+x "/opt/arklone/install.sh" \
-			&& sudo chmod a+x "/opt/arklone/uninstall.sh"
+		sudo chown -R ark:ark /opt/arklone
+		sudo chmod a+x "/opt/arklone/install.sh"
+		sudo chmod a+x "/opt/arklone/uninstall.sh"
 		"/opt/arklone/install.sh"
 
 		# Set up joy2key
-		sudo chown -R ark:ark /opt/joy2key \
-			&& sudo chmod a+x "/opt/joy2key/install.sh" \
-			&& sudo chmod a+x "/opt/joy2key/uninstall.sh"
+		sudo chown -R ark:ark /opt/joy2key
+		sudo chmod a+x "/opt/joy2key/install.sh"
+		sudo chmod a+x "/opt/joy2key/uninstall.sh"
 		"/opt/joy2key/install.sh"
 
 		# Grant permissino to ES arklone launcher
