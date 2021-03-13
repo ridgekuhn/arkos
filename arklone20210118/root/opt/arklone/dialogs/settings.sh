@@ -147,6 +147,22 @@ function manualBackupArkOS() {
 	fi
 }
 
+# Disable RetroArch sort_savefiles_by_content_enable and sort_savefiles_by_content_enable
+function disableRASortSavesByContent() {
+	for retroarch_dir in ${RETROARCHS[@]}; do
+		local savetypes=("savefile" "savestate")
+
+		for savetype in ${savetypes[@]}; do
+			echo "Disabling sort_${savetype}s_by_content_enable in ${retroarch_dir}/retroarch.cfg..."
+
+			local oldSetting=$(cat "${retroarch_dir}/retroarch.cfg" | grep "sort_${savetype}s_by_content_enable")
+			local newSetting="sort_${savetype}s_by_content_enable = \"false\""
+
+			sudo sed -i "s|${oldSetting}|${newSetting}|" "${retroarch_dir}/retroarch.cfg"
+		done
+	done
+}
+
 ###########
 # PREFLIGHT
 ###########
@@ -317,6 +333,28 @@ function regenRAunitsScreen() {
 			16 56 8
 
 	"${ARKLONE_DIR}/systemd/scripts/generate-retroarch-units.sh"
+
+	# Fix incompatible settings
+	if [ $? = 73 ]; then
+		whiptail \
+			--title "${TITLE}" \
+			--yesno \
+				"You have the following incompatible settings enabled in your retroarch.cfg files. Would you like us to disable them?:\n
+				sort_savefiles_by_content_enable\n
+				sort_savestates_by_content_enable" \
+			16 56 8
+
+		if [ $? = 1 ]; then
+			whiptail \
+				--title "${TITLE}" \
+				--msgbox "No action has been taken. You will not be able to sync RetroArch savefiles/savestates until the incompatible settings in your retroarch.cfg files are resolved." \
+			16 56 8
+		else
+			disableRASortSavesByContent
+
+			regenRAunitsScreen
+		fi
+	fi
 
 	homeScreen
 }
