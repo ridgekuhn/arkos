@@ -97,6 +97,30 @@ function setCloud() {
 
 # Enable/Disable auto savefile/savestate path units
 function autoSyncSaves() {
+	# @TODO ArkOS exFAT bug
+	#		A bug in ArkOS prevents systemd path units from being able to watch
+	#		a subdirectory of an exFAT partition.
+	#
+	#		If EASYROMS is exFAT and user has either
+	#		savefiles_in_content_dir or savestates_in_content_dir
+	#		enabled in either retroarch or retroarch32's retroarch.cfg,
+	#		then we will return with error 73.
+
+	#		@see https://github.com/christianhaitian/arkos/issues/289
+	##local exfat=lsblk -f | awk -F " " '/EASYROMS/ {print $2}'
+
+	for retroarch_dir in ${RETROARCHS[@]}; do
+		local savetypes=("savefile" "savestate")
+
+		for savetype in ${savetypes[@]}; do
+			local savetypes_in_content_dir=$(awk -v savetypes_in_content_dir="${savetype}s_in_content_dir" '$0 ~ savetypes_in_content_dir {gsub("\"","",$3); print$3}' "${retroarch_dir}/retroarch.cfg")
+
+			if [ "${savetypes_in_content_dir}" = "true" ]; then
+				return 73
+			fi
+		done
+	done
+
 	# Enable if no units are linked to systemd
 	if [ -z "${AUTOSYNC}" ]; then
 		local units=($(find "${ARKLONE_DIR}/systemd/units/"*".path"))
@@ -155,10 +179,65 @@ function disableRASortSavesByContent() {
 		for savetype in ${savetypes[@]}; do
 			echo "Disabling sort_${savetype}s_by_content_enable in ${retroarch_dir}/retroarch.cfg..."
 
-			local oldSetting=$(cat "${retroarch_dir}/retroarch.cfg" | grep "sort_${savetype}s_by_content_enable")
+			local oldSetting=$(grep "sort_${savetype}s_by_content_enable" "${retroarch_dir}/retroarch.cfg")
 			local newSetting="sort_${savetype}s_by_content_enable = \"false\""
 
 			sudo sed -i "s|${oldSetting}|${newSetting}|" "${retroarch_dir}/retroarch.cfg"
+		done
+	done
+}
+
+#	Set retroarch and retroarch32 retroarch.cfg files to the following settings:
+#
+# savefile_directory = "~/.config/retroarch/saves"
+# savefiles_in_content_dir = "false"
+# sort_savefiles_enable = "false"
+# sort_savefiles_by_content_enable = "false"
+#
+# savestate_directory = "~/.config/retroarch/states"
+# savestates_in_content_dir = "false"
+# sort_savestates_enable = "false"
+# sort_savestates_by_content_enable = "false"
+function setRecommendedRASettings() {
+	for retroarch_dir in ${RETROARCHS[@]}; do
+		# Set savetype directories
+		echo "Setting savefile_directory to ${retroarch_dir}/saves"
+
+		if [ ! -d "${retroarch_dir}/saves" ]; then
+			sudo mkdir "${retroarch_dir}/saves"
+			sudo chmod a+rw "${retroarch_dir}/saves"
+		fi
+
+		local oldSavefileDir=$(grep "savefile_directory" "${retroarch_dir}/retroarch.cfg")
+		local newSavefileDir="savefile_directory = \"${retroarch_dir}/saves\""
+
+		sudo sed -i "s|${oldSavefileDir}|${newSavefileDir}|" "${retroarch_dir}/retroarch.cfg"
+
+		echo "Setting savestate_directory to ${retroarch_dir}/states"
+
+		if [ ! -d "${retroarch_dir}/states" ]; then
+			sudo mkdir "${retroarch_dir}/states"
+			sudo chmod a+rw "${retroarch_dir}/states"
+		fi
+
+		local oldSavestateDir=$(grep "savestate_directory" "${retroarch_dir}/retroarch.cfg")
+		local newSavestateDir="savestate_directory = \"${retroarch_dir}/states\""
+
+		sudo sed -i "s|${oldSavestateDir}|${newSavestateDir}|" "${retroarch_dir}/retroarch.cfg"
+
+		# Set rest of settings
+		local savetypes=("savefile" "savestate")
+
+		for savetype in ${savetypes[@]}; do
+			local settings=("${savetype}s_in_content_dir" "sort_${savetype}s_enable" "sort_${savetype}s_by_content_enable")
+
+			for setting in ${settings[@]}; do
+				echo "Setting ${setting} to \"false\""
+				local oldSetting=$(grep "${setting}" "${retroarch_dir}/retroarch.cfg")
+				local newSetting="${setting} = \"false\""
+
+				sudo sed -i "s|${oldSetting}|${newSetting}|" "${retroarch_dir}/retroarch.cfg"
+			done
 		done
 	done
 }
@@ -277,6 +356,27 @@ function autoSyncSavesScreen() {
 
 	autoSyncSaves
 
+	# Fix incompatible settings
+	if [ $? = 73 ]; then
+		whiptail \
+			--title "${TITLE}" \
+			--yesno \
+				"You have the following incompatible settings enabled in your retroarch.cfg files. Would you like us to disable them?:\n
+				savefiles_in_content_dir\n
+				savestates_in_content_dir" \
+			16 56 8
+
+		if [ $? = 1 ]; then
+			whiptail \
+				--title "${TITLE}" \
+				--msgbox "No action has been taken. You will not be able to sync RetroArch savefiles/savestates until the incompatible settings in your retroarch.cfg files are resolved." \
+			16 56 8
+		else
+			setRecommendedRASettings
+
+			autoSyncSavesScreen
+		fi
+	fi
 	homeScreen
 }
 
