@@ -292,7 +292,7 @@ function homeScreen() {
 # First run dialog
 function firstRunScreen() {
 	# Check if rclone is configured
-	if [ -z $(rclone listremotes 2>/dev/null) ]; then
+	if [ -z "$(rclone listremotes 2>/dev/null)" ]; then
 		whiptail \
 			--title "${TITLE}" \
 			--msgbox "It looks like you haven't configured any rclone remotes yet! Please see the documentation at:\nhttps://github.com/ridgekuhn/arklone\nand\nhttps://rclone.org/docs/" \
