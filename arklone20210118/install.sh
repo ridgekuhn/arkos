@@ -50,6 +50,9 @@ if [ ! -f "${RIDGEK_LOCK}" ]; then
 
 		# Modify retroarch.cfg
 		# This prevents path units from being triggered when .zip content is temporarily decompressed
+		sudo cp /home/ark/.config/retroarch/retroarch.cfg /home/ark/.config/retroarch/retroarch.cfg.arklone${RIDGEK_DATE}.bak
+		sudo cp /home/ark/.config/retroarch32/retroarch.cfg /home/ark/.config/retroarch32/retroarch.cfg.arklone${RIDGEK_DATE}.bak
+
 		oldRAstring='cache_directory = ""'
 		newRAstring='cache_directory = "/tmp"'
 		sudo sed -i "s|${oldRAstring}|${newRAstring}|" /home/ark/.config/retroarch/retroarch.cfg

@@ -19,6 +19,10 @@ if [ -f "${RIDGEK_LOCK}" ]; then
 
 	sudo rm -v "/opt/system/Cloud Settings.sh"
 
+	# Revert RetroArch
+	sudo cp /home/ark/.config/retroarch/retroarch.cfg.arklone${RIDGEK_DATE}.bak /home/ark/.config/retroarch/retroarch.cfg
+	sudo cp /home/ark/.config/retroarch32/retroarch.cfg.arklone${RIDGEK_DATE}.bak /home/ark/.config/retroarch32/retroarch.cfg
+
 	# Remove joy2key
 	"/opt/joy2key/uninstall.sh" \
 		&& sudo rm -rfv "/opt/joy2key"
