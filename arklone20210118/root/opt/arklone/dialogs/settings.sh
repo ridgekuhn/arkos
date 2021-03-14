@@ -107,19 +107,21 @@ function autoSyncSaves() {
 	#		then we will return with error 73.
 
 	#		@see https://github.com/christianhaitian/arkos/issues/289
-	##local exfat=lsblk -f | awk -F " " '/EASYROMS/ {print $2}'
+	local exfat=$(lsblk -f | awk -F " " '/EASYROMS/ {print $2}')
 
-	for retroarch_dir in ${RETROARCHS[@]}; do
-		local savetypes=("savefile" "savestate")
+	if [ "${exfat}" = "exfat" ]; then
+		for retroarch_dir in ${RETROARCHS[@]}; do
+			local savetypes=("savefile" "savestate")
 
-		for savetype in ${savetypes[@]}; do
-			local savetypes_in_content_dir=$(awk -v savetypes_in_content_dir="${savetype}s_in_content_dir" '$0 ~ savetypes_in_content_dir {gsub("\"","",$3); print$3}' "${retroarch_dir}/retroarch.cfg")
+			for savetype in ${savetypes[@]}; do
+				local savetypes_in_content_dir=$(awk -v savetypes_in_content_dir="${savetype}s_in_content_dir" '$0 ~ savetypes_in_content_dir {gsub("\"","",$3); print$3}' "${retroarch_dir}/retroarch.cfg")
 
-			if [ "${savetypes_in_content_dir}" = "true" ]; then
-				return 73
-			fi
+				if [ "${savetypes_in_content_dir}" = "true" ]; then
+					return 73
+				fi
+			done
 		done
-	done
+	fi
 
 	# Enable if no units are linked to systemd
 	if [ -z "${AUTOSYNC}" ]; then
@@ -174,6 +176,9 @@ function manualBackupArkOS() {
 # Disable RetroArch sort_savefiles_by_content_enable and sort_savefiles_by_content_enable
 function disableRASortSavesByContent() {
 	for retroarch_dir in ${RETROARCHS[@]}; do
+		# Backup retroarch.cfg
+		sudo cp ${retroarch_dir}/retroarch.cfg ${retroarch_dir}/retroarch.cfg.arklone.bak
+
 		local savetypes=("savefile" "savestate")
 
 		for savetype in ${savetypes[@]}; do
@@ -200,6 +205,9 @@ function disableRASortSavesByContent() {
 # sort_savestates_by_content_enable = "false"
 function setRecommendedRASettings() {
 	for retroarch_dir in ${RETROARCHS[@]}; do
+		# Backup retroarch.cfg
+		sudo cp ${retroarch_dir}/retroarch.cfg ${retroarch_dir}/retroarch.cfg.arklone.bak
+
 		# Set savetype directories
 		echo "Setting savefile_directory to ${retroarch_dir}/saves"
 
@@ -279,6 +287,43 @@ function homeScreen() {
 		4) manualBackupArkOSScreen ;;
 		5) regenRAunitsScreen ;;
 	esac
+}
+
+# First run dialog
+function firstRunScreen() {
+	# Check if rclone is configured
+	if [ -z $(rclone listremotes 2>/dev/null) ]; then
+		whiptail \
+			--title "${TITLE}" \
+			--msgbox "It looks like you haven't configured any rclone remotes yet! Please see the documentation at:\nhttps://github.com/ridgekuhn/arklone\nand\nhttps://rclone.org/docs/" \
+			16 56 8
+
+		exit
+	fi
+
+	# Set recommended RetroArch settings
+	whiptail \
+		--title "${TITLE}" \
+		--yesno "Welcome to arklone!\nWould you like to automatically configure RetroArch to the recommended settings?" \
+			16 56 8
+
+	if [ $? = 0 ]; then
+		whiptail \
+			--title "${TITLE}" \
+			--infobox \
+				"Please wait while we configure your settings..." \
+				16 56 8
+
+		setRecommendedRASettings
+	fi
+
+	# Generate RetroArch systemd path units
+	whiptail \
+		--title "${TITLE}" \
+		--msgbox "We will now install several components for syncing RetroArch savefiles/savestates. This process may take several minutes, depending on your configuration." \
+			16 56 8
+
+	regenRAunitsScreen
 }
 
 # Cloud service selection dialog
@@ -369,12 +414,14 @@ function autoSyncSavesScreen() {
 		if [ $? = 1 ]; then
 			whiptail \
 				--title "${TITLE}" \
-				--msgbox "No action has been taken. You will not be able to sync RetroArch savefiles/savestates until the incompatible settings in your retroarch.cfg files are resolved." \
+				--msgbox "No action has been taken. You may still use the manual sync feature for RetroArch savefiles/savestates, but you will not be able to automatically sync them until the incompatible settings in retroarch.cfg are resolved." \
 			16 56 8
 		else
 			setRecommendedRASettings
 
 			autoSyncSavesScreen
+
+			return
 		fi
 	fi
 	homeScreen
@@ -447,12 +494,14 @@ function regenRAunitsScreen() {
 		if [ $? = 1 ]; then
 			whiptail \
 				--title "${TITLE}" \
-				--msgbox "No action has been taken. You will not be able to sync RetroArch savefiles/savestates until the incompatible settings in your retroarch.cfg files are resolved." \
+				--msgbox "No action has been taken. You will not be able to sync RetroArch savefiles/savestates until the incompatible settings in your retroarch.cfg files are disabled." \
 			16 56 8
 		else
 			disableRASortSavesByContent
 
 			regenRAunitsScreen
+
+			return
 		fi
 	fi
 
@@ -462,4 +511,10 @@ function regenRAunitsScreen() {
 #####
 # RUN
 #####
+# If ~/.config/arklone/remote.conf doesn't exist,
+# assume this is the user's first run
+if [ ! -f "${REMOTE_CONF}" ]; then
+	firstRunScreen
+fi
+
 homeScreen
