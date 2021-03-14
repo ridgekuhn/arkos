@@ -27,5 +27,10 @@ if [ -f "${RIDGEK_LOCK}" ]; then
 	"/opt/arklone/uninstall.sh" \
 		&& sudo rm -rfv "/opt/arklone"
 
+	# Remove rclone
+	sudo rm -rfv "/home/ark/.config/rclone"
+	sudo rm -rfv "/roms/backup/rclone"
+	sudo apt remove rclone -y
+
 	sudo rm -v "${RIDGEK_LOCK}"
 fi
